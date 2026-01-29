@@ -76,6 +76,13 @@ h1 { margin-bottom: 4px; }
 
 .scope h3 {
   font-size: 13px;
+  margin-bottom: 4px;
+}
+
+.scope label {
+  font-size: 11px;
+  display: flex;
+  gap: 4px;
   margin-bottom: 6px;
 }
 
@@ -91,7 +98,6 @@ h1 { margin-bottom: 4px; }
   margin-top: 20px;
   display: flex;
   gap: 10px;
-  align-items: center;
 }
 
 button {
@@ -103,13 +109,6 @@ button {
 
 .primary { background: #205452; color: #fff; }
 .secondary { background: #ddd; }
-
-label {
-  font-size: 12px;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
 
 .result {
   margin-top: 20px;
@@ -126,7 +125,7 @@ label {
 <body>
 
 <h1>Dimensionamento Diário – CX</h1>
-<div class="subtitle">Arraste | Duplo clique fixa 🔒 | Tudo fica salvo</div>
+<div class="subtitle">Arraste | Duplo clique fixa 🔒 | Estado salvo automaticamente</div>
 
 <div class="container">
 
@@ -134,26 +133,13 @@ label {
   <div class="people-grid" id="pool"></div>
 </div>
 
-<div class="scopes" id="scopes">
-  <div class="scope"><h3>Manual WPP</h3><div class="dropzone"></div></div>
-  <div class="scope"><h3>Manual Email</h3><div class="dropzone"></div></div>
-  <div class="scope"><h3>Manual Chat</h3><div class="dropzone"></div></div>
-  <div class="scope"><h3>Social</h3><div class="dropzone"></div></div>
-  <div class="scope"><h3>Voy</h3><div class="dropzone"></div></div>
-  <div class="scope"><h3>Backoffice</h3><div class="dropzone"></div></div>
-  <div class="scope"><h3>Reclame Aqui</h3><div class="dropzone"></div></div>
-  <div class="scope"><h3>Férias / Licença / Outros</h3><div class="dropzone" data-ignore="true"></div></div>
-</div>
+<div class="scopes" id="scopes"></div>
 
 </div>
 
 <div class="actions">
   <button class="primary" onclick="generate()">Gerar lista</button>
   <button class="secondary" onclick="resetAll()">Resetar</button>
-  <label>
-    <input type="checkbox" id="keepFixed">
-    Manter fixos após reset
-  </label>
 </div>
 
 <div class="result" id="result"></div>
@@ -169,27 +155,76 @@ const PEOPLE = [
  "Pedro Bento","Ana Luiza","Kelly Ribeiro","Nayara Marinho","Ana Flávia","Barbara Oliveira","Lucas Resende"
 ];
 
+const SCOPE_NAMES = [
+ "Manual WPP","Manual Email","Manual Chat","Social",
+ "Voy","Backoffice","Reclame Aqui","Férias / Licença / Outros"
+];
+
 const pool = document.getElementById("pool");
+const scopesContainer = document.getElementById("scopes");
 let dragged = null;
 
+/* ---------- CRIA ESCOPOS ---------- */
+SCOPE_NAMES.forEach(name => {
+  const scope = document.createElement("div");
+  scope.className = "scope";
+  scope.innerHTML = `
+    <h3>${name}</h3>
+    <label>
+      <input type="checkbox" class="keep-scope">
+      Manter após reset
+    </label>
+    <div class="dropzone" ${name.includes("Férias") ? 'data-ignore="true"' : ""}></div>
+  `;
+  scopesContainer.appendChild(scope);
+});
+
+/* ---------- PESSOAS ---------- */
+function createPerson(name, container) {
+  const div = document.createElement("div");
+  div.className = "person";
+  div.textContent = name;
+  div.draggable = true;
+
+  div.ondragstart = () => dragged = div;
+  div.ondblclick = () => {
+    div.classList.toggle("fixed");
+    saveState();
+  };
+
+  if (container) container.appendChild(div);
+  return div;
+}
+
+/* ---------- DRAG ---------- */
+document.addEventListener("dragover", e => e.preventDefault());
+document.addEventListener("drop", e => {
+  if (e.target.classList.contains("dropzone") || e.target.id === "pool") {
+    e.target.appendChild(dragged);
+    saveState();
+  }
+});
+
+/* ---------- STATE ---------- */
 function saveState() {
   const state = {
-    keepFixed: document.getElementById("keepFixed").checked,
-    scopes: {}
+    pool: [...pool.children].map(p => ({
+      name: p.textContent,
+      fixed: p.classList.contains("fixed")
+    })),
+    scopes: []
   };
 
   document.querySelectorAll(".scope").forEach(scope => {
-    const name = scope.querySelector("h3").textContent;
-    state.scopes[name] = [...scope.querySelectorAll(".person")].map(p => ({
-      name: p.textContent,
-      fixed: p.classList.contains("fixed")
-    }));
+    state.scopes.push({
+      name: scope.querySelector("h3").textContent,
+      keep: scope.querySelector(".keep-scope").checked,
+      people: [...scope.querySelectorAll(".person")].map(p => ({
+        name: p.textContent,
+        fixed: p.classList.contains("fixed")
+      }))
+    });
   });
-
-  state.pool = [...pool.querySelectorAll(".person")].map(p => ({
-    name: p.textContent,
-    fixed: p.classList.contains("fixed")
-  }));
 
   localStorage.setItem("dimensionamentoCX", JSON.stringify(state));
 }
@@ -197,61 +232,34 @@ function saveState() {
 function loadState() {
   const saved = localStorage.getItem("dimensionamentoCX");
   if (!saved) {
-    PEOPLE.forEach(name => createPerson(name, pool));
+    PEOPLE.forEach(n => createPerson(n, pool));
     return;
   }
 
   const state = JSON.parse(saved);
-  document.getElementById("keepFixed").checked = state.keepFixed;
-
-  Object.values(state.scopes).flat().forEach(p => {
-    const el = createPerson(p.name);
-    if (p.fixed) el.classList.add("fixed");
-  });
-
-  document.querySelectorAll(".scope").forEach(scope => {
-    const name = scope.querySelector("h3").textContent;
-    const zone = scope.querySelector(".dropzone");
-    (state.scopes[name] || []).forEach(p => {
-      const el = createPerson(p.name, zone);
-      if (p.fixed) el.classList.add("fixed");
-    });
-  });
 
   state.pool.forEach(p => {
     const el = createPerson(p.name, pool);
     if (p.fixed) el.classList.add("fixed");
   });
+
+  state.scopes.forEach((s, i) => {
+    const scope = document.querySelectorAll(".scope")[i];
+    scope.querySelector(".keep-scope").checked = s.keep;
+    const zone = scope.querySelector(".dropzone");
+
+    s.people.forEach(p => {
+      const el = createPerson(p.name, zone);
+      if (p.fixed) el.classList.add("fixed");
+    });
+  });
 }
 
-function createPerson(name, container) {
-  const div = document.createElement("div");
-  div.className = "person";
-  div.draggable = true;
-  div.textContent = name;
-  div.ondragstart = () => dragged = div;
-  div.ondblclick = () => {
-    div.classList.toggle("fixed");
-    saveState();
-  };
-  if (container) container.appendChild(div);
-  return div;
-}
-
-document.querySelectorAll(".dropzone, #pool").forEach(zone => {
-  zone.ondragover = e => e.preventDefault();
-  zone.ondrop = () => {
-    if (dragged) {
-      zone.appendChild(dragged);
-      saveState();
-    }
-  };
-});
-
+/* ---------- RESET ---------- */
 function resetAll() {
-  const keep = document.getElementById("keepFixed").checked;
-  document.querySelectorAll(".dropzone").forEach(zone => {
-    [...zone.children].forEach(p => {
+  document.querySelectorAll(".scope").forEach(scope => {
+    const keep = scope.querySelector(".keep-scope").checked;
+    scope.querySelectorAll(".person").forEach(p => {
       if (!(keep && p.classList.contains("fixed"))) {
         pool.appendChild(p);
       }
@@ -260,6 +268,7 @@ function resetAll() {
   saveState();
 }
 
+/* ---------- LISTA ---------- */
 function generate() {
   let out = "";
   document.querySelectorAll(".scope").forEach(scope => {
@@ -267,23 +276,22 @@ function generate() {
     if (zone.dataset.ignore) return;
     const names = [...zone.children].map(p => p.textContent);
     if (!names.length) return;
+
     out += scope.querySelector("h3").textContent + "\n";
     names.forEach(n => out += n + "\n");
     out += "\n";
   });
+
   document.getElementById("result").textContent = out;
   saveState();
 }
 
-document.getElementById("keepFixed").onchange = saveState;
+document.addEventListener("change", e => {
+  if (e.target.classList.contains("keep-scope")) saveState();
+});
 
 loadState();
 </script>
 
 </body>
 </html>
-
-
-
-
-
