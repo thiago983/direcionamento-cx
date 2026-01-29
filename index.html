@@ -32,6 +32,7 @@ h1 {
   background: #ffffff;
   border-radius: 14px;
   padding: 16px;
+  min-height: 400px;
 }
 
 .pessoas h2 {
@@ -42,6 +43,8 @@ h1 {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
+  min-height: 300px;   /* 🔑 FIX */
+  align-content: flex-start;
 }
 
 /* CARD DA PESSOA */
@@ -165,13 +168,11 @@ textarea {
 
 <div class="container">
 
-  <!-- PESSOAS -->
   <div class="pessoas">
     <h2>Pessoas</h2>
     <div class="lista-pessoas" id="base"></div>
   </div>
 
-  <!-- ESCOPOS -->
   <div class="escopos" id="escopos"></div>
 </div>
 
@@ -181,7 +182,7 @@ textarea {
   <button onclick="resetar()" class="secondary">Resetar</button>
 </div>
 
-<textarea id="resultado" placeholder="A lista aparecerá aqui..."></textarea>
+<textarea id="resultado"></textarea>
 
 <script>
 const pessoas = [
@@ -211,18 +212,15 @@ let estado = JSON.parse(localStorage.getItem("dimensionamento")) || {
 const base = document.getElementById("base");
 const escoposDiv = document.getElementById("escopos");
 
-/* ===== CRIA ESCOPOS ===== */
+/* ESCOPOS */
 escopos.forEach(nome => {
   const box = document.createElement("div");
   box.className = "escopo" + (nome.includes("Férias") ? " ferias" : "");
-  box.innerHTML = `
-    <h3>${nome}</h3>
-    <div class="dropzone" data-escopo="${nome}"></div>
-  `;
+  box.innerHTML = `<h3>${nome}</h3><div class="dropzone" data-escopo="${nome}"></div>`;
   escoposDiv.appendChild(box);
 });
 
-/* ===== CRIA PESSOAS ===== */
+/* PESSOAS */
 pessoas.forEach(nome => {
   const div = document.createElement("div");
   div.className = "pessoa";
@@ -230,24 +228,17 @@ pessoas.forEach(nome => {
   div.dataset.nome = nome;
   div.draggable = true;
 
-  if (estado.locked.includes(nome)) {
-    div.classList.add("locked");
-    addLock(div);
-  }
-
-  div.addEventListener("dragstart", e => {
-    e.dataTransfer.setData("text/plain", nome);
-  });
+  div.addEventListener("dragstart", e =>
+    e.dataTransfer.setData("text/plain", nome)
+  );
 
   div.addEventListener("dblclick", () => toggleLock(div));
-
   base.appendChild(div);
 });
 
-/* ===== DRAG & DROP ===== */
+/* DRAG */
 document.querySelectorAll(".dropzone").forEach(zone => {
   zone.addEventListener("dragover", e => e.preventDefault());
-
   zone.addEventListener("drop", e => {
     e.preventDefault();
     const nome = e.dataTransfer.getData("text/plain");
@@ -257,94 +248,41 @@ document.querySelectorAll(".dropzone").forEach(zone => {
   });
 });
 
-/* ===== LOCK ===== */
 function toggleLock(div) {
-  const nome = div.dataset.nome;
-
-  if (div.classList.contains("locked")) {
-    div.classList.remove("locked");
-    removeLock(div);
-    estado.locked = estado.locked.filter(n => n !== nome);
-  } else {
-    div.classList.add("locked");
-    addLock(div);
-    estado.locked.push(nome);
-  }
-  salvar();
+  div.classList.toggle("locked");
 }
 
-function addLock(div) {
-  if (!div.querySelector(".lock-icon")) {
-    const lock = document.createElement("div");
-    lock.className = "lock-icon";
-    lock.textContent = "🔒";
-    div.appendChild(lock);
-  }
-}
-
-function removeLock(div) {
-  const lock = div.querySelector(".lock-icon");
-  if (lock) lock.remove();
-}
-
-/* ===== LISTA ===== */
 function gerarLista() {
   let texto = "";
   document.querySelectorAll(".dropzone").forEach(zone => {
     const escopo = zone.dataset.escopo;
     if (escopo.includes("Férias")) return;
-
-    const nomes = [...zone.querySelectorAll(".pessoa")].map(p => p.dataset.nome);
+    const nomes = [...zone.children].map(p => p.dataset.nome);
     if (nomes.length) {
       texto += `- **${escopo}**\n`;
-      nomes.forEach(n => texto += `${n}\n`);
+      nomes.forEach(n => texto += n + "\n");
       texto += "\n";
     }
   });
-  document.getElementById("resultado").value = texto.trim();
+  resultado.value = texto.trim();
 }
 
 function copiarLista() {
-  const area = document.getElementById("resultado");
-  area.select();
+  resultado.select();
   document.execCommand("copy");
 }
 
-/* ===== RESET ===== */
 function resetar() {
-  document.querySelectorAll(".pessoa").forEach(p => {
-    if (!p.classList.contains("locked")) {
-      base.appendChild(p);
-    }
-  });
+  document.querySelectorAll(".pessoa").forEach(p => base.appendChild(p));
   salvar();
 }
 
-/* ===== SALVAR ===== */
 function salvar() {
-  estado.posicoes = {};
-  document.querySelectorAll(".dropzone").forEach(zone => {
-    estado.posicoes[zone.dataset.escopo] =
-      [...zone.querySelectorAll(".pessoa")].map(p => p.dataset.nome);
-  });
-  localStorage.setItem("dimensionamento", JSON.stringify(estado));
+  localStorage.setItem("dimensionamento", "ok");
 }
-
-/* ===== RESTORE (FIX DOS NOMES SUMIREM) ===== */
-// 1. garante base cheia
-document.querySelectorAll(".pessoa").forEach(p => base.appendChild(p));
-
-// 2. reaplica último estado salvo
-Object.entries(estado.posicoes).forEach(([escopo, nomes]) => {
-  const zone = document.querySelector(`.dropzone[data-escopo="${escopo}"]`);
-  if (!zone) return;
-
-  nomes.forEach(nome => {
-    const pessoa = document.querySelector(`.pessoa[data-nome="${nome}"]`);
-    if (pessoa) zone.appendChild(pessoa);
-  });
-});
 </script>
 
 </body>
 </html>
+
+
