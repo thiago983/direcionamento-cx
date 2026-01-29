@@ -40,35 +40,25 @@ h2 {
 .person {
   background: #205452;
   color: #ffffff;
-  padding: 8px 10px;
+  padding: 6px 26px 6px 10px;
   border-radius: 6px;
   cursor: grab;
   font-size: 13px;
   user-select: none;
   position: relative;
-
-  /* 🔹 tamanho padrão */
-  width: 140px;
-  text-align: center;
-  line-height: 1.2;
-  white-space: normal;
-  word-break: break-word;
 }
 
 .person.fixed {
   outline: 2px solid #ffd166;
 }
 
-/* 🔒 cadeado no canto superior direito */
 .person.fixed::after {
   content: "🔒";
   position: absolute;
-  top: -6px;
-  right: -6px;
-  background: #ffffff;
-  border-radius: 50%;
-  padding: 2px 4px;
-  font-size: 11px;
+  right: 6px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 13px;
 }
 
 /* ===== Escopos ===== */
@@ -85,11 +75,6 @@ h2 {
   padding: 10px;
   display: flex;
   flex-direction: column;
-}
-
-/* 🟠 Férias */
-.scope.ferias {
-  background: #f0ac63;
 }
 
 .scope h3 {
@@ -113,16 +98,6 @@ h2 {
 .dropzone.hover {
   outline: 2px dashed #ffffff;
   background: rgba(255,255,255,.25);
-}
-
-/* 👤 pessoa dentro do escopo: sempre 1 linha */
-.dropzone .person {
-  width: 100%;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  text-align: left;
-  padding-right: 22px;
 }
 
 /* ===== Ações ===== */
@@ -232,7 +207,6 @@ function init() {
   scopes.forEach(s => {
     const card = document.createElement("div");
     card.className = "scope";
-    if (s.includes("Férias")) card.classList.add("ferias");
 
     const h = document.createElement("h3");
     h.textContent = s;
@@ -346,7 +320,3 @@ init();
 </script>
 </body>
 </html>
-
-
-
-
