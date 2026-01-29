@@ -1,264 +1,311 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8" />
-  <title>Dimensionamento CX</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      background: #f2f2f2;
-      padding: 20px;
-    }
+<meta charset="UTF-8" />
+<title>Dimensionamento CX</title>
 
-    h2 {
-      text-align: center;
-      margin-bottom: 20px;
-    }
+<style>
+body {
+  margin: 0;
+  font-family: Inter, Arial, sans-serif;
+  background: #f2f4f5;
+  color: #1f2d2b;
+}
 
-    .container {
-      display: flex;
-      gap: 16px;
-      flex-wrap: wrap;
-      margin-bottom: 20px;
-    }
+h2 {
+  margin: 16px;
+}
 
-    .scope {
-      background: #7caf94;
-      border-radius: 8px;
-      padding: 10px;
-      width: 260px;
-      min-height: 160px;
-      box-sizing: border-box;
-    }
+.container {
+  display: flex;
+  gap: 16px;
+  padding: 16px;
+}
 
-    .scope.drag-over {
-      outline: 3px dashed #205452;
-    }
+/* ===== Pessoas ===== */
+.people {
+  width: 30%;
+  background: #ffffff;
+  border-radius: 10px;
+  padding: 12px;
+  box-shadow: 0 2px 6px rgba(0,0,0,.08);
+}
 
-    .scope h3 {
-      text-align: center;
-      margin: 6px 0 10px;
-      color: #fff;
-      font-size: 15px;
-    }
+.people-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
 
-    .people {
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-    }
+.person {
+  background: #205452;
+  color: #ffffff;
+  padding: 6px 10px;
+  border-radius: 6px;
+  cursor: grab;
+  font-size: 13px;
+  user-select: none;
+}
 
-    .person {
-      background: #205452;
-      color: #ffffff;
-      padding: 6px 8px;
-      border-radius: 6px;
-      cursor: grab;
-      user-select: none;
-    }
+.person.fixed {
+  outline: 2px solid #ffd166;
+}
 
-    .person.fixed {
-      outline: 2px solid #ffffff;
-    }
+/* ===== Escopos ===== */
+.scopes {
+  flex: 1;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 12px;
+}
 
-    .base {
-      margin-top: 20px;
-      padding: 10px;
-      background: #ddd;
-      border-radius: 8px;
-    }
+.scope {
+  background: #7caf94;
+  border-radius: 10px;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+}
 
-    button {
-      margin-right: 10px;
-      padding: 8px 14px;
-      cursor: pointer;
-    }
+.scope h3 {
+  margin: 0 0 8px 0;
+  text-align: center;
+  font-size: 14px;
+  color: #ffffff;
+}
 
-    textarea {
-      width: 100%;
-      height: 180px;
-      margin-top: 10px;
-    }
-  </style>
+.dropzone {
+  flex: 1;
+  background: rgba(255,255,255,.15);
+  border-radius: 6px;
+  padding: 8px;
+  min-height: 120px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.dropzone.hover {
+  outline: 2px dashed #ffffff;
+  background: rgba(255,255,255,.25);
+}
+
+/* ===== Ações ===== */
+.actions {
+  padding: 16px;
+  display: flex;
+  gap: 8px;
+}
+
+button {
+  padding: 8px 14px;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.primary {
+  background: #205452;
+  color: #fff;
+}
+
+.secondary {
+  background: #e0e0e0;
+}
+
+/* ===== Resultado ===== */
+#result {
+  margin: 16px;
+  padding: 12px;
+  background: #ffffff;
+  border-radius: 10px;
+  white-space: pre-line;
+  box-shadow: 0 2px 6px rgba(0,0,0,.08);
+  font-size: 14px;
+}
+</style>
 </head>
+
 <body>
 
-<h2>Dimensionamento CX</h2>
+<h2>Dimensionamento Diário</h2>
 
-<div class="container" id="scopes"></div>
+<div class="container">
 
-<div class="base">
-  <strong>Base</strong>
-  <div class="people" id="base"></div>
+  <div class="people">
+    <h3>Pessoas</h3>
+    <div class="people-list" id="people"></div>
+  </div>
+
+  <div class="scopes" id="scopes"></div>
+
 </div>
 
-<br />
+<div class="actions">
+  <button class="primary" onclick="generate()">Gerar lista</button>
+  <button class="secondary" onclick="copyAll()">Copiar lista</button>
+  <button class="secondary" onclick="resetAll()">Resetar</button>
+</div>
 
-<button onclick="resetAll()">Resetar</button>
-<button onclick="copyList()">Copiar tudo</button>
-
-<textarea id="output" readonly></textarea>
+<div id="result"></div>
 
 <script>
-const scopeNames = [
-  "Atendimento",
-  "Backoffice",
-  "Reputação",
-  "Qualidade",
-  "Treinamento"
-];
-
 const peopleNames = [
-  "Ana Luiza",
-  "Kelly Ribeiro",
-  "João",
-  "Marina",
-  "Carlos",
-  "Fernanda",
-  "Rafael",
-  "Bianca"
+"Camila Marigo","Cauane Wiggberto","Daniela Barral","Elisabete Pinho",
+"Erick Muniz","Gisele Lopes","Jenifer Alcantara","João Pedro Finamore",
+"Johana Geisa","Karina Tosta","Leonardo Santiago","Lorenzo Moreira",
+"Luisa Rodrigues","Luiz Felipe Firmo","Maria Clara Periard",
+"Natanael Cruz","Rayanne Rodrigues","Samantha Marçal","Jessyca Rodrigues",
+"Rayssa Magalhães Farias","Dayane da Silva Santos","Matheus André",
+"Lais Rodrigues","Marianne Belmiro","Hérica Oliveira","Julia Prazeres",
+"Wesley Freitas","Milena Cabral","Thariny Portela","Patricia Rodrigues",
+"Pedro Bento","Ana Luiza","Kelly Ribeiro","Nayara Marinho","Ana Flávia",
+"Barbara Oliveira","Lucas Resende"
 ];
 
-let state = JSON.parse(localStorage.getItem("cxState")) || {
-  scopes: {},
-  fixed: {}
-};
+const scopes = [
+"Manual WPP","Manual Email","Manual Chat",
+"Social","Voy","Backoffice","Reclame Aqui",
+"Férias / Licença / Outros"
+];
 
-function saveState() {
-  localStorage.setItem("cxState", JSON.stringify(state));
-}
+let dragged = null;
 
-function createPerson(name) {
-  const div = document.createElement("div");
-  div.className = "person";
-  div.textContent = name;
-  div.draggable = true;
-
-  if (state.fixed[name]) {
-    div.classList.add("fixed");
-  }
-
-  div.addEventListener("dragstart", e => {
-    e.dataTransfer.setData("text/plain", name);
-  });
-
-  div.addEventListener("dblclick", () => {
-    state.fixed[name] = !state.fixed[name];
-    div.classList.toggle("fixed");
-    saveState();
-  });
-
-  return div;
-}
-
-function createScope(scope) {
-  const card = document.createElement("div");
-  card.className = "scope";
-
-  const title = document.createElement("h3");
-  title.textContent = scope;
-  card.appendChild(title);
-
-  const peopleDiv = document.createElement("div");
-  peopleDiv.className = "people";
-
-  card.addEventListener("dragover", e => {
-    e.preventDefault();
-    card.classList.add("drag-over");
-  });
-
-  card.addEventListener("dragleave", () => {
-    card.classList.remove("drag-over");
-  });
-
-  card.addEventListener("drop", e => {
-    e.preventDefault();
-    card.classList.remove("drag-over");
-
-    const name = e.dataTransfer.getData("text/plain");
-
-    Object.values(state.scopes).forEach(arr => {
-      const i = arr.indexOf(name);
-      if (i > -1) arr.splice(i, 1);
-    });
-
-    state.scopes[scope] = state.scopes[scope] || [];
-    if (!state.scopes[scope].includes(name)) {
-      state.scopes[scope].push(name);
-    }
-
-    render();
-    saveState();
-  });
-
-  card.appendChild(peopleDiv);
-  return { card, peopleDiv };
-}
-
-function render() {
-  const scopesDiv = document.getElementById("scopes");
-  const baseDiv = document.getElementById("base");
-
-  scopesDiv.innerHTML = "";
-  baseDiv.innerHTML = "";
-
-  const used = new Set();
-
-  scopeNames.forEach(scope => {
-    const { card, peopleDiv } = createScope(scope);
-
-    (state.scopes[scope] || []).forEach(name => {
-      const p = createPerson(name);
-      peopleDiv.appendChild(p);
-      used.add(name);
-    });
-
-    scopesDiv.appendChild(card);
-  });
-
+/* ===== Criação ===== */
+function init() {
+  const people = document.getElementById("people");
   peopleNames.forEach(name => {
-    if (!used.has(name)) {
-      baseDiv.appendChild(createPerson(name));
-    }
+    const p = document.createElement("div");
+    p.className = "person";
+    p.textContent = name;
+    p.draggable = true;
+
+    p.ondragstart = () => dragged = p;
+    p.ondragend = () => dragged = null;
+
+    p.ondblclick = () => {
+      p.classList.toggle("fixed");
+      saveState();
+    };
+
+    people.appendChild(p);
   });
 
-  generateList();
+  const scopesEl = document.getElementById("scopes");
+  scopes.forEach(s => {
+    const card = document.createElement("div");
+    card.className = "scope";
+
+    const h = document.createElement("h3");
+    h.textContent = s;
+
+    const dz = document.createElement("div");
+    dz.className = "dropzone";
+    if (s.includes("Férias")) dz.dataset.ignore = "true";
+
+    dz.ondragover = e => {
+      e.preventDefault();
+      dz.classList.add("hover");
+    };
+    dz.ondragleave = () => dz.classList.remove("hover");
+    dz.ondrop = e => {
+      e.preventDefault();
+      dz.classList.remove("hover");
+      if (dragged) {
+        dz.appendChild(dragged);
+        saveState();
+      }
+    };
+
+    card.appendChild(h);
+    card.appendChild(dz);
+    scopesEl.appendChild(card);
+  });
+
+  loadState();
 }
 
+/* ===== Lista ===== */
+function generate() {
+  let out = "";
+  document.querySelectorAll(".scope").forEach(scope => {
+    const dz = scope.querySelector(".dropzone");
+    if (dz.dataset.ignore) return;
+
+    const names = [...dz.children].map(p => p.textContent);
+    if (!names.length) return;
+
+    out += "- " + scope.querySelector("h3").textContent + "\n";
+    names.forEach(n => out += n + "\n");
+    out += "\n";
+  });
+  document.getElementById("result").textContent = out;
+  saveState();
+}
+
+function copyAll() {
+  const text = document.getElementById("result").textContent;
+  if (!text.trim()) return alert("Gere a lista antes 🙂");
+
+  const t = document.createElement("textarea");
+  t.value = text;
+  document.body.appendChild(t);
+  t.select();
+  document.execCommand("copy");
+  document.body.removeChild(t);
+  alert("Lista copiada!");
+}
+
+/* ===== Reset ===== */
 function resetAll() {
-  Object.keys(state.scopes).forEach(scope => {
-    state.scopes[scope] = state.scopes[scope].filter(
-      name => state.fixed[name]
-    );
+  document.querySelectorAll(".person").forEach(p => {
+    if (!p.classList.contains("fixed")) {
+      document.getElementById("people").appendChild(p);
+    }
   });
   saveState();
-  render();
 }
 
-function generateList() {
-  let text = "";
+/* ===== Persistência ===== */
+function saveState() {
+  const state = {
+    fixed: [...document.querySelectorAll(".person.fixed")].map(p => p.textContent),
+    scopes: {}
+  };
 
-  scopeNames.forEach(scope => {
-    const people = state.scopes[scope] || [];
-    if (people.length) {
-      text += `- ${scope}\n`;
-      people.forEach(p => text += `${p}\n`);
-      text += `\n`;
-    }
+  document.querySelectorAll(".scope").forEach(scope => {
+    const name = scope.querySelector("h3").textContent;
+    const dz = scope.querySelector(".dropzone");
+    state.scopes[name] = [...dz.children].map(p => p.textContent);
   });
 
-  document.getElementById("output").value = text.trim();
+  localStorage.setItem("dimensionamento", JSON.stringify(state));
 }
 
-function copyList() {
-  const ta = document.getElementById("output");
-  ta.select();
-  document.execCommand("copy");
+function loadState() {
+  const raw = localStorage.getItem("dimensionamento");
+  if (!raw) return;
+  const state = JSON.parse(raw);
+
+  document.querySelectorAll(".person").forEach(p => {
+    if (state.fixed.includes(p.textContent)) p.classList.add("fixed");
+  });
+
+  Object.entries(state.scopes).forEach(([scope, names]) => {
+    const dz = [...document.querySelectorAll(".scope")]
+      .find(s => s.querySelector("h3").textContent === scope)
+      ?.querySelector(".dropzone");
+
+    names.forEach(n => {
+      const p = [...document.querySelectorAll(".person")]
+        .find(x => x.textContent === n);
+      if (p && dz) dz.appendChild(p);
+    });
+  });
 }
 
-render();
+init();
 </script>
-
 </body>
 </html>
-
