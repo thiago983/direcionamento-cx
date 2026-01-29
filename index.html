@@ -13,8 +13,17 @@ body {
   color: #2b2b2b;
 }
 
-h1 { margin-bottom: 4px; }
-.subtitle { font-size: 13px; color: #666; margin-bottom: 20px; }
+h1 {
+  text-align: center;
+  margin-bottom: 6px;
+}
+
+.subtitle {
+  text-align: center;
+  font-size: 13px;
+  color: #666;
+  margin-bottom: 24px;
+}
 
 .container {
   display: grid;
@@ -24,7 +33,7 @@ h1 { margin-bottom: 4px; }
 
 /* Pessoas */
 .people {
-  background: #fff;
+  background: #ffffff;
   border-radius: 8px;
   padding: 12px;
   border: 1px solid #d9d9d9;
@@ -38,7 +47,7 @@ h1 { margin-bottom: 4px; }
 
 .person {
   background: #205452;
-  color: #fff;
+  color: #ffffff;
   padding: 6px;
   font-size: 12px;
   border-radius: 6px;
@@ -71,19 +80,13 @@ h1 { margin-bottom: 4px; }
   background: #7caf94;
   border-radius: 8px;
   padding: 10px;
-  color: #fff;
+  color: #ffffff;
 }
 
 .scope h3 {
+  text-align: center;
   font-size: 13px;
-  margin-bottom: 4px;
-}
-
-.scope label {
-  font-size: 11px;
-  display: flex;
-  gap: 4px;
-  margin-bottom: 6px;
+  margin-bottom: 8px;
 }
 
 .dropzone {
@@ -97,22 +100,29 @@ h1 { margin-bottom: 4px; }
 .actions {
   margin-top: 20px;
   display: flex;
-  gap: 10px;
+  justify-content: center;
+  gap: 12px;
 }
 
 button {
-  padding: 8px 14px;
+  padding: 8px 16px;
   border: none;
   border-radius: 6px;
   cursor: pointer;
 }
 
-.primary { background: #205452; color: #fff; }
-.secondary { background: #ddd; }
+.primary {
+  background: #205452;
+  color: #ffffff;
+}
+
+.secondary {
+  background: #dddddd;
+}
 
 .result {
   margin-top: 20px;
-  background: #fff;
+  background: #ffffff;
   border-radius: 8px;
   padding: 12px;
   border: 1px solid #d9d9d9;
@@ -125,7 +135,9 @@ button {
 <body>
 
 <h1>Dimensionamento Diário – CX</h1>
-<div class="subtitle">Arraste | Duplo clique fixa 🔒 | Estado salvo automaticamente</div>
+<div class="subtitle">
+Arraste os nomes | Duplo clique fixa 🔒 | Reset mantém fixos
+</div>
 
 <div class="container">
 
@@ -155,7 +167,7 @@ const PEOPLE = [
  "Pedro Bento","Ana Luiza","Kelly Ribeiro","Nayara Marinho","Ana Flávia","Barbara Oliveira","Lucas Resende"
 ];
 
-const SCOPE_NAMES = [
+const SCOPES = [
  "Manual WPP","Manual Email","Manual Chat","Social",
  "Voy","Backoffice","Reclame Aqui","Férias / Licença / Outros"
 ];
@@ -164,39 +176,37 @@ const pool = document.getElementById("pool");
 const scopesContainer = document.getElementById("scopes");
 let dragged = null;
 
-/* ---------- CRIA ESCOPOS ---------- */
-SCOPE_NAMES.forEach(name => {
-  const scope = document.createElement("div");
-  scope.className = "scope";
-  scope.innerHTML = `
+/* Criar escopos */
+SCOPES.forEach(name => {
+  const s = document.createElement("div");
+  s.className = "scope";
+  s.innerHTML = `
     <h3>${name}</h3>
-    <label>
-      <input type="checkbox" class="keep-scope">
-      Manter após reset
-    </label>
     <div class="dropzone" ${name.includes("Férias") ? 'data-ignore="true"' : ""}></div>
   `;
-  scopesContainer.appendChild(scope);
+  scopesContainer.appendChild(s);
 });
 
-/* ---------- PESSOAS ---------- */
-function createPerson(name, container) {
+/* Criar pessoa */
+function createPerson(name, container, fixed = false) {
   const div = document.createElement("div");
   div.className = "person";
   div.textContent = name;
   div.draggable = true;
 
+  if (fixed) div.classList.add("fixed");
+
   div.ondragstart = () => dragged = div;
+
   div.ondblclick = () => {
     div.classList.toggle("fixed");
     saveState();
   };
 
-  if (container) container.appendChild(div);
-  return div;
+  container.appendChild(div);
 }
 
-/* ---------- DRAG ---------- */
+/* Drag & Drop */
 document.addEventListener("dragover", e => e.preventDefault());
 document.addEventListener("drop", e => {
   if (e.target.classList.contains("dropzone") || e.target.id === "pool") {
@@ -205,26 +215,21 @@ document.addEventListener("drop", e => {
   }
 });
 
-/* ---------- STATE ---------- */
+/* Estado */
 function saveState() {
   const state = {
     pool: [...pool.children].map(p => ({
       name: p.textContent,
       fixed: p.classList.contains("fixed")
     })),
-    scopes: []
-  };
-
-  document.querySelectorAll(".scope").forEach(scope => {
-    state.scopes.push({
+    scopes: [...document.querySelectorAll(".scope")].map(scope => ({
       name: scope.querySelector("h3").textContent,
-      keep: scope.querySelector(".keep-scope").checked,
       people: [...scope.querySelectorAll(".person")].map(p => ({
         name: p.textContent,
         fixed: p.classList.contains("fixed")
       }))
-    });
-  });
+    }))
+  };
 
   localStorage.setItem("dimensionamentoCX", JSON.stringify(state));
 }
@@ -232,35 +237,25 @@ function saveState() {
 function loadState() {
   const saved = localStorage.getItem("dimensionamentoCX");
   if (!saved) {
-    PEOPLE.forEach(n => createPerson(n, pool));
+    PEOPLE.forEach(p => createPerson(p, pool));
     return;
   }
 
   const state = JSON.parse(saved);
 
-  state.pool.forEach(p => {
-    const el = createPerson(p.name, pool);
-    if (p.fixed) el.classList.add("fixed");
-  });
+  state.pool.forEach(p => createPerson(p.name, pool, p.fixed));
 
   state.scopes.forEach((s, i) => {
-    const scope = document.querySelectorAll(".scope")[i];
-    scope.querySelector(".keep-scope").checked = s.keep;
-    const zone = scope.querySelector(".dropzone");
-
-    s.people.forEach(p => {
-      const el = createPerson(p.name, zone);
-      if (p.fixed) el.classList.add("fixed");
-    });
+    const zone = document.querySelectorAll(".dropzone")[i];
+    s.people.forEach(p => createPerson(p.name, zone, p.fixed));
   });
 }
 
-/* ---------- RESET ---------- */
+/* Reset */
 function resetAll() {
   document.querySelectorAll(".scope").forEach(scope => {
-    const keep = scope.querySelector(".keep-scope").checked;
     scope.querySelectorAll(".person").forEach(p => {
-      if (!(keep && p.classList.contains("fixed"))) {
+      if (!p.classList.contains("fixed")) {
         pool.appendChild(p);
       }
     });
@@ -268,7 +263,7 @@ function resetAll() {
   saveState();
 }
 
-/* ---------- LISTA ---------- */
+/* Gerar lista */
 function generate() {
   let out = "";
   document.querySelectorAll(".scope").forEach(scope => {
@@ -281,17 +276,14 @@ function generate() {
     names.forEach(n => out += n + "\n");
     out += "\n";
   });
-
   document.getElementById("result").textContent = out;
   saveState();
 }
-
-document.addEventListener("change", e => {
-  if (e.target.classList.contains("keep-scope")) saveState();
-});
 
 loadState();
 </script>
 
 </body>
 </html>
+
+
