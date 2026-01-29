@@ -16,6 +16,10 @@ body {
   color: #1f2d2b;
 }
 
+h1 {
+  margin-bottom: 16px;
+}
+
 /* ===== LAYOUT ===== */
 .container {
   display: grid;
@@ -26,7 +30,7 @@ body {
 /* ===== PESSOAS ===== */
 .pessoas {
   background: #ffffff;
-  border-radius: 12px;
+  border-radius: 14px;
   padding: 16px;
 }
 
@@ -52,13 +56,14 @@ body {
   user-select: none;
   max-width: 160px;
   text-align: center;
-  white-space: normal;
+  word-break: break-word;
 }
 
 .pessoa.locked {
   outline: 2px solid #f0ac63;
 }
 
+/* CADEADO */
 .lock-icon {
   position: absolute;
   top: -6px;
@@ -101,7 +106,7 @@ body {
   color: #0f2a25;
 }
 
-/* ÁREA DROP */
+/* DROPZONE */
 .dropzone {
   flex: 1;
   background: rgba(255,255,255,0.25);
@@ -113,7 +118,7 @@ body {
   align-content: flex-start;
 }
 
-/* PESSOA DENTRO DO ESCOPO */
+/* pessoa dentro do escopo */
 .dropzone .pessoa {
   background: #ffffff;
   color: #205452;
@@ -121,7 +126,7 @@ body {
   white-space: nowrap;
 }
 
-/* ===== BOTÕES ===== */
+/* ===== CONTROLES ===== */
 .controls {
   margin-top: 20px;
   display: flex;
@@ -142,7 +147,7 @@ button.secondary {
   background: #7caf94;
 }
 
-/* ===== LISTA GERADA ===== */
+/* ===== LISTA ===== */
 textarea {
   width: 100%;
   height: 220px;
@@ -180,9 +185,9 @@ textarea {
 
 <script>
 const pessoas = [
-  "Camila Marigo","Cauane Wiggberto","Elisabete Pinho",
+  "Camila Marigo","Cauane Wiggberto","Daniela Barral","Elisabete Pinho",
   "Erick Muniz","Gisele Lopes","Jenifer Alcantara","João Pedro Finamore",
-  "Johanna Geisa","Karina Tosta","Leonardo Santiago","Lorenzo Moreira",
+  "Johana Geisa","Karina Tosta","Leonardo Santiago","Lorenzo Moreira",
   "Luisa Rodrigues","Luiz Felipe Firmo","Maria Clara Periard","Natanael Cruz",
   "Rayanne Rodrigues","Samantha Marçal","Jessyca Rodrigues",
   "Rayssa Magalhães Farias","Dayane da Silva Santos","Matheus André",
@@ -203,25 +208,27 @@ let estado = JSON.parse(localStorage.getItem("dimensionamento")) || {
   locked: []
 };
 
-/* ===== INIT ===== */
 const base = document.getElementById("base");
 const escoposDiv = document.getElementById("escopos");
 
+/* ===== CRIA ESCOPOS ===== */
 escopos.forEach(nome => {
   const box = document.createElement("div");
   box.className = "escopo" + (nome.includes("Férias") ? " ferias" : "");
-  box.innerHTML = `<h3>${nome}</h3><div class="dropzone" data-escopo="${nome}"></div>`;
+  box.innerHTML = `
+    <h3>${nome}</h3>
+    <div class="dropzone" data-escopo="${nome}"></div>
+  `;
   escoposDiv.appendChild(box);
 });
 
-pessoas.forEach(nome => criarPessoa(nome));
-
-function criarPessoa(nome) {
+/* ===== CRIA PESSOAS ===== */
+pessoas.forEach(nome => {
   const div = document.createElement("div");
   div.className = "pessoa";
   div.textContent = nome;
-  div.draggable = true;
   div.dataset.nome = nome;
+  div.draggable = true;
 
   if (estado.locked.includes(nome)) {
     div.classList.add("locked");
@@ -229,23 +236,23 @@ function criarPessoa(nome) {
   }
 
   div.addEventListener("dragstart", e => {
-    e.dataTransfer.setData("text", nome);
+    e.dataTransfer.setData("text/plain", nome);
   });
 
   div.addEventListener("dblclick", () => toggleLock(div));
 
   base.appendChild(div);
-}
+});
 
-/* ===== DROP ===== */
+/* ===== DRAG & DROP ===== */
 document.querySelectorAll(".dropzone").forEach(zone => {
   zone.addEventListener("dragover", e => e.preventDefault());
 
   zone.addEventListener("drop", e => {
     e.preventDefault();
-    const nome = e.dataTransfer.getData("text");
+    const nome = e.dataTransfer.getData("text/plain");
     const pessoa = document.querySelector(`.pessoa[data-nome="${nome}"]`);
-    zone.appendChild(pessoa);
+    if (pessoa) zone.appendChild(pessoa);
     salvar();
   });
 });
@@ -253,6 +260,7 @@ document.querySelectorAll(".dropzone").forEach(zone => {
 /* ===== LOCK ===== */
 function toggleLock(div) {
   const nome = div.dataset.nome;
+
   if (div.classList.contains("locked")) {
     div.classList.remove("locked");
     removeLock(div);
@@ -305,7 +313,9 @@ function copiarLista() {
 /* ===== RESET ===== */
 function resetar() {
   document.querySelectorAll(".pessoa").forEach(p => {
-    if (!p.classList.contains("locked")) base.appendChild(p);
+    if (!p.classList.contains("locked")) {
+      base.appendChild(p);
+    }
   });
   salvar();
 }
@@ -320,18 +330,21 @@ function salvar() {
   localStorage.setItem("dimensionamento", JSON.stringify(estado));
 }
 
-/* ===== RESTORE ===== */
+/* ===== RESTORE (FIX DOS NOMES SUMIREM) ===== */
+// 1. garante base cheia
+document.querySelectorAll(".pessoa").forEach(p => base.appendChild(p));
+
+// 2. reaplica último estado salvo
 Object.entries(estado.posicoes).forEach(([escopo, nomes]) => {
   const zone = document.querySelector(`.dropzone[data-escopo="${escopo}"]`);
-  if (zone) {
-    nomes.forEach(n => {
-      const p = document.querySelector(`.pessoa[data-nome="${n}"]`);
-      if (p) zone.appendChild(p);
-    });
-  }
+  if (!zone) return;
+
+  nomes.forEach(nome => {
+    const pessoa = document.querySelector(`.pessoa[data-nome="${nome}"]`);
+    if (pessoa) zone.appendChild(pessoa);
+  });
 });
 </script>
 
 </body>
 </html>
-
