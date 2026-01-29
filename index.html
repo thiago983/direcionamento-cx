@@ -177,11 +177,11 @@ const docRef = db.collection("estado").doc("dimensionamento");
 
 /* Dados */
 const PEOPLE = [
- "Camila Marigo","Cauane Wiggberto","Daniela Barral","Elisabete Pinho","Erick Muniz",
- "Gisele Lopes","Jenifer Alcantara","João Pedro Finamore","Johana Geisa","Karina Tosta",
+ "Camila Marigo","Cauane Wiggberto","Elisabete Pinho","Erick Muniz",
+ "Gisele Lopes","Jenifer Alcantara","João Finamore","Johanna Geisa","Karina Tosta",
  "Leonardo Santiago","Lorenzo Moreira","Luisa Rodrigues","Luiz Felipe Firmo","Maria Clara Periard",
- "Natanael Cruz","Rayanne Rodrigues","Samantha Marçal","Jessyca Rodrigues","Rayssa Magalhães Farias",
- "Dayane da Silva Santos","Matheus André","Lais Rodrigues","Marianne Belmiro","Hérica Oliveira",
+ "Natanael Cruz","Rayanne Rodrigues","Samantha Marçal","Jessyca Rodrigues","Rayssa Magalhães",
+ "Dayane da Silva","Matheus André","Lais Rodrigues","Marianne Belmiro","Hérica Oliveira",
  "Julia Prazeres","Wesley Freitas","Milena Cabral","Thariny Portela","Patricia Rodrigues",
  "Pedro Bento","Ana Luiza","Kelly Ribeiro","Nayara Marinho","Ana Flávia","Barbara Oliveira","Lucas Resende"
 ];
@@ -304,7 +304,7 @@ function generate() {
     const names = [...zone.children].map(p => p.textContent);
     if (!names.length) return;
 
-    out += "- " + scope.querySelector("h3").textContent + "\n";
+    out += "• " + scope.querySelector("h3").textContent + "\n";
     names.forEach(n => out += n + "\n");
     out += "\n";
   });
@@ -334,4 +334,5 @@ function copyAll() {
 
 </body>
 </html>
+
 
