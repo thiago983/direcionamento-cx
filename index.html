@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <title>Dimensionamento Diário – CX</title>
+
   <style>
     * {
       box-sizing: border-box;
@@ -33,11 +34,14 @@
       gap: 20px;
     }
 
-    /* Pessoas */
+    /* =======================
+       PESSOAS
+    ======================= */
     .people-container {
       background: #ffffff;
       border-radius: 8px;
       padding: 12px;
+      border: 1px solid #d9d9d9;
     }
 
     .people-title {
@@ -53,16 +57,23 @@
     }
 
     .person {
-      background: #e6eef7;
-      border: 1px solid #c6d6ea;
+      background: #205452;
+      color: #ffffff;
       border-radius: 6px;
       padding: 6px 8px;
       font-size: 12px;
       text-align: center;
       cursor: grab;
+      user-select: none;
     }
 
-    /* Escopos */
+    .person:active {
+      cursor: grabbing;
+    }
+
+    /* =======================
+       ESCOPOS
+    ======================= */
     .scopes {
       display: grid;
       grid-template-columns: repeat(4, 1fr);
@@ -70,17 +81,17 @@
     }
 
     .scope {
-      background: #ffffff;
+      background: #7caf94;
       border-radius: 8px;
       padding: 10px;
       min-height: 140px;
-      border: 1px solid #d9d9d9;
+      color: #ffffff;
     }
 
     .scope h3 {
       font-size: 13px;
       margin: 0 0 8px 0;
-      color: #444;
+      font-weight: 600;
     }
 
     .dropzone {
@@ -90,7 +101,9 @@
       gap: 6px;
     }
 
-    /* Ações */
+    /* =======================
+       AÇÕES
+    ======================= */
     .actions {
       margin-top: 20px;
       display: flex;
@@ -107,8 +120,8 @@
     }
 
     .primary {
-      background: #4b6ea9;
-      color: #fff;
+      background: #205452;
+      color: #ffffff;
     }
 
     .secondary {
@@ -124,7 +137,9 @@
       gap: 6px;
     }
 
-    /* Resultado */
+    /* =======================
+       RESULTADO
+    ======================= */
     .result {
       margin-top: 20px;
       background: #ffffff;
@@ -136,6 +151,7 @@
     }
   </style>
 </head>
+
 <body>
 
 <h1>Dimensionamento Diário – CX</h1>
@@ -215,7 +231,6 @@
 <script>
   let dragged = null;
   const peoplePool = document.getElementById("peoplePool");
-  const fixedState = {};
 
   document.addEventListener("dragstart", e => {
     if (e.target.classList.contains("person")) dragged = e.target;
@@ -258,4 +273,6 @@
 
 </body>
 </html>
+
+
 
