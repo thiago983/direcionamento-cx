@@ -1,252 +1,288 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8" />
-  <title>Dimensionamento Diário – CX</title>
+<meta charset="UTF-8">
+<title>Dimensionamento Diário – CX</title>
 
-  <style>
-    body {
-      font-family: Arial, Helvetica, sans-serif;
-      background: #f8fafc;
-      margin: 20px;
-      color: #0f172a;
-    }
+<style>
+body {
+  margin: 0;
+  padding: 24px;
+  background: #f2f3f5;
+  font-family: Arial, sans-serif;
+  color: #2b2b2b;
+}
 
-    h1 {
-      margin-bottom: 4px;
-    }
+h1 { margin-bottom: 4px; }
+.subtitle { font-size: 13px; color: #666; margin-bottom: 20px; }
 
-    p {
-      margin-top: 0;
-      color: #475569;
-    }
+.container {
+  display: grid;
+  grid-template-columns: 1fr 3fr;
+  gap: 20px;
+}
 
-    /* ===== PESSOAS ===== */
-    .people-container {
-      background: #ffffff;
-      border-radius: 12px;
-      padding: 12px;
-      margin-bottom: 20px;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.06);
-    }
+/* Pessoas */
+.people {
+  background: #fff;
+  border-radius: 8px;
+  padding: 12px;
+  border: 1px solid #d9d9d9;
+}
 
-    .people-list {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 4px;
-    }
+.people-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+}
 
-    .person {
-      background: #e0f2fe;
-      color: #075985;
-      padding: 3px 6px;
-      border-radius: 6px;
-      font-size: 11px;
-      cursor: grab;
-      white-space: nowrap;
-    }
+.person {
+  background: #205452;
+  color: #fff;
+  padding: 6px;
+  font-size: 12px;
+  border-radius: 6px;
+  text-align: center;
+  cursor: grab;
+  user-select: none;
+}
 
-    /* ===== ESCOPOS ===== */
-    .scopes-container {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 12px;
-    }
+.person.fixed {
+  outline: 2px solid #ffd966;
+  position: relative;
+}
 
-    .scope {
-      background: #ffffff;
-      border: 2px dashed #cbd5e1;
-      border-radius: 12px;
-      padding: 8px;
-      width: 190px;
-      display: flex;
-      flex-direction: column;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.06);
-    }
+.person.fixed::after {
+  content: "🔒";
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  font-size: 12px;
+}
 
-    .scope h3 {
-      margin: 0;
-      font-size: 13px;
-      text-align: center;
-    }
+/* Escopos */
+.scopes {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+}
 
-    .scope label {
-      font-size: 10px;
-      color: #475569;
-      margin: 4px 0 6px 0;
-      text-align: center;
-      cursor: pointer;
-    }
+.scope {
+  background: #7caf94;
+  border-radius: 8px;
+  padding: 10px;
+  color: #fff;
+}
 
-    .scope .person {
-      margin-bottom: 4px;
-    }
+.scope h3 {
+  font-size: 13px;
+  margin-bottom: 6px;
+}
 
-    /* ===== AÇÕES ===== */
-    .actions {
-      margin-top: 20px;
-    }
+.dropzone {
+  min-height: 90px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
 
-    button {
-      padding: 8px 14px;
-      border: none;
-      border-radius: 8px;
-      background: #2563eb;
-      color: #ffffff;
-      font-size: 13px;
-      cursor: pointer;
-      margin-right: 8px;
-    }
+/* Ações */
+.actions {
+  margin-top: 20px;
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
 
-    button.reset {
-      background: #64748b;
-    }
+button {
+  padding: 8px 14px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+}
 
-    textarea {
-      width: 100%;
-      height: 260px;
-      margin-top: 12px;
-      padding: 10px;
-      border-radius: 8px;
-      border: 1px solid #cbd5e1;
-      font-family: monospace;
-      font-size: 13px;
-    }
-  </style>
+.primary { background: #205452; color: #fff; }
+.secondary { background: #ddd; }
+
+label {
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.result {
+  margin-top: 20px;
+  background: #fff;
+  border-radius: 8px;
+  padding: 12px;
+  border: 1px solid #d9d9d9;
+  white-space: pre-line;
+  font-size: 13px;
+}
+</style>
 </head>
 
 <body>
 
 <h1>Dimensionamento Diário – CX</h1>
-<p>Arraste as pessoas, defina escopos fixos e gere a lista.</p>
+<div class="subtitle">Arraste | Duplo clique fixa 🔒 | Tudo fica salvo</div>
 
-<!-- PESSOAS -->
-<div class="people-container">
-  <strong>Pessoas</strong>
-  <div class="people-list" id="people">
-    <div class="person" draggable="true">Camila Marigo</div>
-    <div class="person" draggable="true">Cauane Wiggberto</div>
-    <div class="person" draggable="true">Daniela Barral</div>
-    <div class="person" draggable="true">Elisabete Pinho</div>
-    <div class="person" draggable="true">Erick Muniz</div>
-    <div class="person" draggable="true">Gisele Lopes</div>
-    <div class="person" draggable="true">Jenifer Alcantara</div>
-    <div class="person" draggable="true">João Pedro Finamore</div>
-    <div class="person" draggable="true">Johana Geisa</div>
-    <div class="person" draggable="true">Karina Tosta</div>
-    <div class="person" draggable="true">Leonardo Santiago</div>
-    <div class="person" draggable="true">Lorenzo Moreira</div>
-    <div class="person" draggable="true">Luisa Rodrigues</div>
-    <div class="person" draggable="true">Luiz Felipe Firmo</div>
-    <div class="person" draggable="true">Maria Clara Periard</div>
-    <div class="person" draggable="true">Natanael Cruz</div>
-    <div class="person" draggable="true">Rayanne Rodrigues</div>
-    <div class="person" draggable="true">Samantha Marçal</div>
-    <div class="person" draggable="true">Jessyca Rodrigues</div>
-    <div class="person" draggable="true">Rayssa Magalhães Farias</div>
-    <div class="person" draggable="true">Dayane da Silva Santos</div>
-    <div class="person" draggable="true">Matheus André</div>
-    <div class="person" draggable="true">Lais Rodrigues</div>
-    <div class="person" draggable="true">Marianne Belmiro</div>
-    <div class="person" draggable="true">Hérica Oliveira</div>
-    <div class="person" draggable="true">Julia Prazeres</div>
-    <div class="person" draggable="true">Wesley Freitas</div>
-    <div class="person" draggable="true">Milena Cabral</div>
-    <div class="person" draggable="true">Thariny Portela</div>
-    <div class="person" draggable="true">Patricia Rodrigues</div>
-    <div class="person" draggable="true">Pedro Bento</div>
-    <div class="person" draggable="true">Ana Luiza</div>
-    <div class="person" draggable="true">Kelly Ribeiro</div>
-    <div class="person" draggable="true">Nayara Marinho</div>
-    <div class="person" draggable="true">Ana Flávia</div>
-    <div class="person" draggable="true">Barbara Oliveira</div>
-    <div class="person" draggable="true">Lucas Resende</div>
-  </div>
+<div class="container">
+
+<div class="people">
+  <div class="people-grid" id="pool"></div>
 </div>
 
-<!-- ESCOPOS -->
-<div class="scopes-container">
-  <div class="scope" data-export="true">
-    <h3>Manual WPP</h3>
-    <label><input type="checkbox"> manter após reset</label>
-  </div>
-  <div class="scope" data-export="true">
-    <h3>Manual Email</h3>
-    <label><input type="checkbox"> manter após reset</label>
-  </div>
-  <div class="scope" data-export="true">
-    <h3>Manual Chat</h3>
-    <label><input type="checkbox"> manter após reset</label>
-  </div>
-  <div class="scope" data-export="true">
-    <h3>Social</h3>
-    <label><input type="checkbox"> manter após reset</label>
-  </div>
-  <div class="scope" data-export="true">
-    <h3>Voy</h3>
-    <label><input type="checkbox"> manter após reset</label>
-  </div>
-  <div class="scope" data-export="true">
-    <h3>Backoffice</h3>
-    <label><input type="checkbox"> manter após reset</label>
-  </div>
-  <div class="scope" data-export="true">
-    <h3>Reclame Aqui</h3>
-    <label><input type="checkbox"> manter após reset</label>
-  </div>
-  <div class="scope" data-export="false">
-    <h3>Férias / Licença / Outros</h3>
-    <label><input type="checkbox"> manter após reset</label>
-  </div>
+<div class="scopes" id="scopes">
+  <div class="scope"><h3>Manual WPP</h3><div class="dropzone"></div></div>
+  <div class="scope"><h3>Manual Email</h3><div class="dropzone"></div></div>
+  <div class="scope"><h3>Manual Chat</h3><div class="dropzone"></div></div>
+  <div class="scope"><h3>Social</h3><div class="dropzone"></div></div>
+  <div class="scope"><h3>Voy</h3><div class="dropzone"></div></div>
+  <div class="scope"><h3>Backoffice</h3><div class="dropzone"></div></div>
+  <div class="scope"><h3>Reclame Aqui</h3><div class="dropzone"></div></div>
+  <div class="scope"><h3>Férias / Licença / Outros</h3><div class="dropzone" data-ignore="true"></div></div>
+</div>
+
 </div>
 
 <div class="actions">
-  <button onclick="gerarLista()">Gerar lista</button>
-  <button class="reset" onclick="resetar()">Resetar</button>
-  <textarea id="resultado" placeholder="Lista pronta para copiar e colar"></textarea>
+  <button class="primary" onclick="generate()">Gerar lista</button>
+  <button class="secondary" onclick="resetAll()">Resetar</button>
+  <label>
+    <input type="checkbox" id="keepFixed">
+    Manter fixos após reset
+  </label>
 </div>
 
+<div class="result" id="result"></div>
+
 <script>
-  let dragged;
+const PEOPLE = [
+ "Camila Marigo","Cauane Wiggberto","Daniela Barral","Elisabete Pinho","Erick Muniz",
+ "Gisele Lopes","Jenifer Alcantara","João Pedro Finamore","Johana Geisa","Karina Tosta",
+ "Leonardo Santiago","Lorenzo Moreira","Luisa Rodrigues","Luiz Felipe Firmo","Maria Clara Periard",
+ "Natanael Cruz","Rayanne Rodrigues","Samantha Marçal","Jessyca Rodrigues","Rayssa Magalhães Farias",
+ "Dayane da Silva Santos","Matheus André","Lais Rodrigues","Marianne Belmiro","Hérica Oliveira",
+ "Julia Prazeres","Wesley Freitas","Milena Cabral","Thariny Portela","Patricia Rodrigues",
+ "Pedro Bento","Ana Luiza","Kelly Ribeiro","Nayara Marinho","Ana Flávia","Barbara Oliveira","Lucas Resende"
+];
 
-  document.addEventListener("dragstart", e => {
-    if (e.target.classList.contains("person")) dragged = e.target;
+const pool = document.getElementById("pool");
+let dragged = null;
+
+function saveState() {
+  const state = {
+    keepFixed: document.getElementById("keepFixed").checked,
+    scopes: {}
+  };
+
+  document.querySelectorAll(".scope").forEach(scope => {
+    const name = scope.querySelector("h3").textContent;
+    state.scopes[name] = [...scope.querySelectorAll(".person")].map(p => ({
+      name: p.textContent,
+      fixed: p.classList.contains("fixed")
+    }));
   });
 
-  document.querySelectorAll(".scope, .people-list").forEach(area => {
-    area.addEventListener("dragover", e => e.preventDefault());
-    area.addEventListener("drop", e => {
-      e.preventDefault();
-      if (dragged) area.appendChild(dragged);
-    });
-  });
+  state.pool = [...pool.querySelectorAll(".person")].map(p => ({
+    name: p.textContent,
+    fixed: p.classList.contains("fixed")
+  }));
 
-  function gerarLista() {
-    let texto = "";
-    document.querySelectorAll('.scope[data-export="true"]').forEach(scope => {
-      texto += scope.querySelector("h3").innerText + "\n";
-      scope.querySelectorAll(".person").forEach(p => {
-        texto += "- " + p.innerText + "\n";
-      });
-      texto += "\n";
-    });
-    document.getElementById("resultado").value = texto.trim();
+  localStorage.setItem("dimensionamentoCX", JSON.stringify(state));
+}
+
+function loadState() {
+  const saved = localStorage.getItem("dimensionamentoCX");
+  if (!saved) {
+    PEOPLE.forEach(name => createPerson(name, pool));
+    return;
   }
 
-  function resetar() {
-    const people = document.getElementById("people");
-    document.querySelectorAll(".scope").forEach(scope => {
-      const manter = scope.querySelector("input").checked;
-      if (!manter) {
-        scope.querySelectorAll(".person").forEach(p => people.appendChild(p));
+  const state = JSON.parse(saved);
+  document.getElementById("keepFixed").checked = state.keepFixed;
+
+  Object.values(state.scopes).flat().forEach(p => {
+    const el = createPerson(p.name);
+    if (p.fixed) el.classList.add("fixed");
+  });
+
+  document.querySelectorAll(".scope").forEach(scope => {
+    const name = scope.querySelector("h3").textContent;
+    const zone = scope.querySelector(".dropzone");
+    (state.scopes[name] || []).forEach(p => {
+      const el = createPerson(p.name, zone);
+      if (p.fixed) el.classList.add("fixed");
+    });
+  });
+
+  state.pool.forEach(p => {
+    const el = createPerson(p.name, pool);
+    if (p.fixed) el.classList.add("fixed");
+  });
+}
+
+function createPerson(name, container) {
+  const div = document.createElement("div");
+  div.className = "person";
+  div.draggable = true;
+  div.textContent = name;
+  div.ondragstart = () => dragged = div;
+  div.ondblclick = () => {
+    div.classList.toggle("fixed");
+    saveState();
+  };
+  if (container) container.appendChild(div);
+  return div;
+}
+
+document.querySelectorAll(".dropzone, #pool").forEach(zone => {
+  zone.ondragover = e => e.preventDefault();
+  zone.ondrop = () => {
+    if (dragged) {
+      zone.appendChild(dragged);
+      saveState();
+    }
+  };
+});
+
+function resetAll() {
+  const keep = document.getElementById("keepFixed").checked;
+  document.querySelectorAll(".dropzone").forEach(zone => {
+    [...zone.children].forEach(p => {
+      if (!(keep && p.classList.contains("fixed"))) {
+        pool.appendChild(p);
       }
     });
-    document.getElementById("resultado").value = "";
-  }
+  });
+  saveState();
+}
+
+function generate() {
+  let out = "";
+  document.querySelectorAll(".scope").forEach(scope => {
+    const zone = scope.querySelector(".dropzone");
+    if (zone.dataset.ignore) return;
+    const names = [...zone.children].map(p => p.textContent);
+    if (!names.length) return;
+    out += scope.querySelector("h3").textContent + "\n";
+    names.forEach(n => out += n + "\n");
+    out += "\n";
+  });
+  document.getElementById("result").textContent = out;
+  saveState();
+}
+
+document.getElementById("keepFixed").onchange = saveState;
+
+loadState();
 </script>
 
 </body>
 </html>
+
 
 
 
