@@ -1,311 +1,264 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-<meta charset="UTF-8">
-<title>Dimensionamento Diário – CX</title>
+  <meta charset="UTF-8" />
+  <title>Dimensionamento CX</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f2f2f2;
+      padding: 20px;
+    }
 
-<style>
-body {
-  margin: 0;
-  padding: 24px;
-  background: #f2f3f5;
-  font-family: Arial, sans-serif;
-  color: #2b2b2b;
-}
+    h2 {
+      text-align: center;
+      margin-bottom: 20px;
+    }
 
-h1 {
-  text-align: center;
-  margin-bottom: 6px;
-}
+    .container {
+      display: flex;
+      gap: 16px;
+      flex-wrap: wrap;
+      margin-bottom: 20px;
+    }
 
-.subtitle {
-  text-align: center;
-  font-size: 13px;
-  color: #666;
-  margin-bottom: 24px;
-}
+    .scope {
+      background: #7caf94;
+      border-radius: 8px;
+      padding: 10px;
+      width: 260px;
+      min-height: 160px;
+      box-sizing: border-box;
+    }
 
-.container {
-  display: grid;
-  grid-template-columns: 1fr 3fr;
-  gap: 20px;
-}
+    .scope.drag-over {
+      outline: 3px dashed #205452;
+    }
 
-/* Pessoas */
-.people {
-  background: #ffffff;
-  border-radius: 8px;
-  padding: 12px;
-  border: 1px solid #d9d9d9;
-}
+    .scope h3 {
+      text-align: center;
+      margin: 6px 0 10px;
+      color: #fff;
+      font-size: 15px;
+    }
 
-.people-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 8px;
-}
+    .people {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
 
-.person {
-  background: #205452;
-  color: #ffffff;
-  padding: 6px;
-  font-size: 12px;
-  border-radius: 6px;
-  text-align: center;
-  cursor: grab;
-  user-select: none;
-}
+    .person {
+      background: #205452;
+      color: #ffffff;
+      padding: 6px 8px;
+      border-radius: 6px;
+      cursor: grab;
+      user-select: none;
+    }
 
-.person.fixed {
-  outline: 2px solid #ffd966;
-  position: relative;
-}
+    .person.fixed {
+      outline: 2px solid #ffffff;
+    }
 
-.person.fixed::after {
-  content: "🔒";
-  position: absolute;
-  top: -6px;
-  right: -6px;
-  font-size: 12px;
-}
+    .base {
+      margin-top: 20px;
+      padding: 10px;
+      background: #ddd;
+      border-radius: 8px;
+    }
 
-/* Escopos */
-.scopes {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 12px;
-}
+    button {
+      margin-right: 10px;
+      padding: 8px 14px;
+      cursor: pointer;
+    }
 
-.scope {
-  background: #7caf94;
-  border-radius: 8px;
-  padding: 10px;
-  color: #ffffff;
-}
-
-.scope h3 {
-  text-align: center;
-  font-size: 13px;
-  margin-bottom: 8px;
-}
-
-.dropzone {
-  min-height: 90px;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-/* Ações */
-.actions {
-  margin-top: 20px;
-  display: flex;
-  justify-content: center;
-  gap: 12px;
-}
-
-button {
-  padding: 8px 16px;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-}
-
-.primary {
-  background: #205452;
-  color: #ffffff;
-}
-
-.secondary {
-  background: #dddddd;
-}
-
-.result {
-  margin-top: 20px;
-  background: #ffffff;
-  border-radius: 8px;
-  padding: 12px;
-  border: 1px solid #d9d9d9;
-  white-space: pre-line;
-  font-size: 13px;
-}
-</style>
+    textarea {
+      width: 100%;
+      height: 180px;
+      margin-top: 10px;
+    }
+  </style>
 </head>
-
 <body>
 
-<h1>Dimensionamento Diário – CX</h1>
-<div class="subtitle">
-Arraste os nomes | Duplo clique fixa 🔒 | Reset mantém fixos
+<h2>Dimensionamento CX</h2>
+
+<div class="container" id="scopes"></div>
+
+<div class="base">
+  <strong>Base</strong>
+  <div class="people" id="base"></div>
 </div>
 
-<div class="container">
+<br />
 
-<div class="people">
-  <div class="people-grid" id="pool"></div>
-</div>
+<button onclick="resetAll()">Resetar</button>
+<button onclick="copyList()">Copiar tudo</button>
 
-<div class="scopes" id="scopes"></div>
-
-</div>
-
-<div class="actions">
-  <button class="primary" onclick="generate()">Gerar lista</button>
-  <button class="secondary" onclick="copyAll()">Copiar lista</button>
-  <button class="secondary" onclick="resetAll()">Resetar</button>
-</div>
-
-<div class="result" id="result"></div>
+<textarea id="output" readonly></textarea>
 
 <script>
-const PEOPLE = [
- "Camila Marigo","Cauane Wiggberto","Daniela Barral","Elisabete Pinho","Erick Muniz",
- "Gisele Lopes","Jenifer Alcantara","João Pedro Finamore","Johana Geisa","Karina Tosta",
- "Leonardo Santiago","Lorenzo Moreira","Luisa Rodrigues","Luiz Felipe Firmo","Maria Clara Periard",
- "Natanael Cruz","Rayanne Rodrigues","Samantha Marçal","Jessyca Rodrigues","Rayssa Magalhães Farias",
- "Dayane da Silva Santos","Matheus André","Lais Rodrigues","Marianne Belmiro","Hérica Oliveira",
- "Julia Prazeres","Wesley Freitas","Milena Cabral","Thariny Portela","Patricia Rodrigues",
- "Pedro Bento","Ana Luiza","Kelly Ribeiro","Nayara Marinho","Ana Flávia","Barbara Oliveira","Lucas Resende"
+const scopeNames = [
+  "Atendimento",
+  "Backoffice",
+  "Reputação",
+  "Qualidade",
+  "Treinamento"
 ];
 
-const SCOPES = [
- "Manual WPP","Manual Email","Manual Chat","Social",
- "Voy","Backoffice","Reclame Aqui","Férias / Licença / Outros"
+const peopleNames = [
+  "Ana Luiza",
+  "Kelly Ribeiro",
+  "João",
+  "Marina",
+  "Carlos",
+  "Fernanda",
+  "Rafael",
+  "Bianca"
 ];
 
-const pool = document.getElementById("pool");
-const scopesContainer = document.getElementById("scopes");
-let dragged = null;
+let state = JSON.parse(localStorage.getItem("cxState")) || {
+  scopes: {},
+  fixed: {}
+};
 
-/* Criar escopos */
-SCOPES.forEach(name => {
-  const s = document.createElement("div");
-  s.className = "scope";
-  s.innerHTML = `
-    <h3>${name}</h3>
-    <div class="dropzone" ${name.includes("Férias") ? 'data-ignore="true"' : ""}></div>
-  `;
-  scopesContainer.appendChild(s);
-});
+function saveState() {
+  localStorage.setItem("cxState", JSON.stringify(state));
+}
 
-/* Criar pessoa */
-function createPerson(name, container, fixed = false) {
+function createPerson(name) {
   const div = document.createElement("div");
   div.className = "person";
   div.textContent = name;
   div.draggable = true;
 
-  if (fixed) div.classList.add("fixed");
+  if (state.fixed[name]) {
+    div.classList.add("fixed");
+  }
 
-  div.ondragstart = () => dragged = div;
+  div.addEventListener("dragstart", e => {
+    e.dataTransfer.setData("text/plain", name);
+  });
 
-  div.ondblclick = () => {
+  div.addEventListener("dblclick", () => {
+    state.fixed[name] = !state.fixed[name];
     div.classList.toggle("fixed");
     saveState();
-  };
-
-  container.appendChild(div);
-}
-
-/* Drag & Drop */
-document.addEventListener("dragover", e => e.preventDefault());
-document.addEventListener("drop", e => {
-  if (e.target.classList.contains("dropzone") || e.target.id === "pool") {
-    e.target.appendChild(dragged);
-    saveState();
-  }
-});
-
-/* Estado */
-function saveState() {
-  const state = {
-    pool: [...pool.children].map(p => ({
-      name: p.textContent,
-      fixed: p.classList.contains("fixed")
-    })),
-    scopes: [...document.querySelectorAll(".scope")].map(scope => ({
-      name: scope.querySelector("h3").textContent,
-      people: [...scope.querySelectorAll(".person")].map(p => ({
-        name: p.textContent,
-        fixed: p.classList.contains("fixed")
-      }))
-    }))
-  };
-
-  localStorage.setItem("dimensionamentoCX", JSON.stringify(state));
-}
-
-function loadState() {
-  const saved = localStorage.getItem("dimensionamentoCX");
-  if (!saved) {
-    PEOPLE.forEach(p => createPerson(p, pool));
-    return;
-  }
-
-  const state = JSON.parse(saved);
-
-  state.pool.forEach(p => createPerson(p.name, pool, p.fixed));
-
-  state.scopes.forEach((s, i) => {
-    const zone = document.querySelectorAll(".dropzone")[i];
-    s.people.forEach(p => createPerson(p.name, zone, p.fixed));
   });
+
+  return div;
 }
 
-/* Reset */
-function resetAll() {
-  document.querySelectorAll(".scope").forEach(scope => {
-    scope.querySelectorAll(".person").forEach(p => {
-      if (!p.classList.contains("fixed")) {
-        pool.appendChild(p);
-      }
+function createScope(scope) {
+  const card = document.createElement("div");
+  card.className = "scope";
+
+  const title = document.createElement("h3");
+  title.textContent = scope;
+  card.appendChild(title);
+
+  const peopleDiv = document.createElement("div");
+  peopleDiv.className = "people";
+
+  card.addEventListener("dragover", e => {
+    e.preventDefault();
+    card.classList.add("drag-over");
+  });
+
+  card.addEventListener("dragleave", () => {
+    card.classList.remove("drag-over");
+  });
+
+  card.addEventListener("drop", e => {
+    e.preventDefault();
+    card.classList.remove("drag-over");
+
+    const name = e.dataTransfer.getData("text/plain");
+
+    Object.values(state.scopes).forEach(arr => {
+      const i = arr.indexOf(name);
+      if (i > -1) arr.splice(i, 1);
     });
-  });
-  saveState();
-}
 
-/* Gerar lista */
-function generate() {
-  let out = "";
+    state.scopes[scope] = state.scopes[scope] || [];
+    if (!state.scopes[scope].includes(name)) {
+      state.scopes[scope].push(name);
+    }
 
-  document.querySelectorAll(".scope").forEach(scope => {
-    const zone = scope.querySelector(".dropzone");
-    if (zone.dataset.ignore) return;
-
-    const names = [...zone.children].map(p => p.textContent);
-    if (!names.length) return;
-
-    out += "- " + scope.querySelector("h3").textContent + "\n";
-    names.forEach(n => out += n + "\n");
-    out += "\n";
+    render();
+    saveState();
   });
 
-  const result = document.getElementById("result");
-  result.innerHTML = out.replace(/- (.*)/g, "<strong>- $1</strong>");
-
-  saveState();
+  card.appendChild(peopleDiv);
+  return { card, peopleDiv };
 }
 
-/* Copiar lista */
-function copyAll() {
-  const result = document.getElementById("result");
-  if (!result.textContent.trim()) {
-    alert("Gere a lista antes de copiar 🙂");
-    return;
-  }
+function render() {
+  const scopesDiv = document.getElementById("scopes");
+  const baseDiv = document.getElementById("base");
 
-  const temp = document.createElement("textarea");
-  temp.value = result.textContent;
-  document.body.appendChild(temp);
-  temp.select();
+  scopesDiv.innerHTML = "";
+  baseDiv.innerHTML = "";
+
+  const used = new Set();
+
+  scopeNames.forEach(scope => {
+    const { card, peopleDiv } = createScope(scope);
+
+    (state.scopes[scope] || []).forEach(name => {
+      const p = createPerson(name);
+      peopleDiv.appendChild(p);
+      used.add(name);
+    });
+
+    scopesDiv.appendChild(card);
+  });
+
+  peopleNames.forEach(name => {
+    if (!used.has(name)) {
+      baseDiv.appendChild(createPerson(name));
+    }
+  });
+
+  generateList();
+}
+
+function resetAll() {
+  Object.keys(state.scopes).forEach(scope => {
+    state.scopes[scope] = state.scopes[scope].filter(
+      name => state.fixed[name]
+    );
+  });
+  saveState();
+  render();
+}
+
+function generateList() {
+  let text = "";
+
+  scopeNames.forEach(scope => {
+    const people = state.scopes[scope] || [];
+    if (people.length) {
+      text += `- ${scope}\n`;
+      people.forEach(p => text += `${p}\n`);
+      text += `\n`;
+    }
+  });
+
+  document.getElementById("output").value = text.trim();
+}
+
+function copyList() {
+  const ta = document.getElementById("output");
+  ta.select();
   document.execCommand("copy");
-  document.body.removeChild(temp);
-
-  alert("Lista copiada com sucesso!");
 }
 
-loadState();
+render();
 </script>
 
 </body>
 </html>
+
