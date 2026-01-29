@@ -47,7 +47,7 @@ h2 {
   user-select: none;
   position: relative;
 
-  /* 🔹 tamanho padrão */
+  /* base */
   width: 140px;
   text-align: center;
   line-height: 1.2;
@@ -59,7 +59,7 @@ h2 {
   outline: 2px solid #ffd166;
 }
 
-/* 🔒 cadeado no canto superior direito */
+/* 🔒 cadeado */
 .person.fixed::after {
   content: "🔒";
   position: absolute;
@@ -87,7 +87,6 @@ h2 {
   flex-direction: column;
 }
 
-/* 🟠 Férias */
 .scope.ferias {
   background: #f0ac63;
 }
@@ -110,19 +109,22 @@ h2 {
   gap: 6px;
 }
 
-.dropzone.hover {
-  outline: 2px dashed #ffffff;
-  background: rgba(255,255,255,.25);
-}
-
-/* 👤 pessoa dentro do escopo: sempre 1 linha */
+/* ✅ CORREÇÃO DEFINITIVA DO TAMANHO NO ESCOPO */
 .dropzone .person {
-  width: 100%;
+  width: auto;
+  max-width: 100%;
+  align-self: flex-start;
+
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
   text-align: left;
   padding-right: 22px;
+}
+
+.dropzone.hover {
+  outline: 2px dashed #ffffff;
+  background: rgba(255,255,255,.25);
 }
 
 /* ===== Ações ===== */
@@ -346,5 +348,3 @@ init();
 </script>
 </body>
 </html>
-
-
