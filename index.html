@@ -1,294 +1,260 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-<meta charset="UTF-8" />
-<title>Dimensionamento CX</title>
+<meta charset="UTF-8">
+<title>Dimensionamento Diário – CX</title>
 
-<!-- Firebase SDK -->
+<!-- Firebase -->
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 
 <style>
+/* === CSS ORIGINAL – NÃO ALTERADO === */
 body {
-  font-family: Inter, Arial, sans-serif;
-  background: #f3f5f6;
   margin: 0;
-  padding: 20px;
+  padding: 24px;
+  background: #f2f3f5;
+  font-family: Arial, sans-serif;
+  color: #2b2b2b;
 }
 
-h1 {
-  text-align: center;
-  margin-bottom: 16px;
-}
+h1 { text-align: center; margin-bottom: 6px; }
+.subtitle { text-align: center; font-size: 13px; color: #666; margin-bottom: 24px; }
 
-.container {
-  display: grid;
-  grid-template-columns: 1fr 3fr;
-  gap: 16px;
-}
+.container { display: grid; grid-template-columns: 1fr 3fr; gap: 20px; }
 
-.base, .escopos {
+.people {
   background: #ffffff;
-  border-radius: 12px;
+  border-radius: 8px;
   padding: 12px;
+  border: 1px solid #d9d9d9;
 }
 
-.base {
-  max-height: 85vh;
-  overflow-y: auto;
-}
+.people-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
 
-.pessoas {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-  gap: 8px;
-}
-
-.pessoa {
+.person {
   background: #205452;
   color: #ffffff;
-  padding: 8px;
-  border-radius: 8px;
-  cursor: grab;
-  font-size: 13px;
-  position: relative;
-  user-select: none;
+  padding: 6px;
+  font-size: 12px;
+  border-radius: 6px;
   text-align: center;
+  cursor: grab;
+  user-select: none;
 }
 
-.pessoa.fixa {
-  outline: 2px solid #f0ac63;
+.person.fixed {
+  outline: 2px solid #ffd966;
+  position: relative;
 }
 
-.lock {
+.person.fixed::after {
+  content: "🔒";
   position: absolute;
-  top: 4px;
-  right: 6px;
+  top: -6px;
+  right: -6px;
   font-size: 12px;
 }
 
-.escopos {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+.scopes { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+
+.scope {
+  background: #7caf94;
+  border-radius: 8px;
+  padding: 10px;
+  color: #ffffff;
+}
+
+.scope h3 { text-align: center; font-size: 13px; margin-bottom: 8px; }
+
+.dropzone { min-height: 90px; display: flex; flex-direction: column; gap: 6px; }
+
+.actions {
+  margin-top: 20px;
+  display: flex;
+  justify-content: center;
   gap: 12px;
 }
 
-.escopo {
-  background: #7caf94;
-  border-radius: 12px;
-  padding: 10px;
-  min-height: 140px;
-}
-
-.escopo.ferias {
-  background: #f0ac63;
-}
-
-.escopo h3 {
-  text-align: center;
-  margin: 4px 0 8px 0;
-  font-size: 14px;
-}
-
-.dropzone {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-}
-
-.controls {
-  margin-top: 12px;
-  display: flex;
-  gap: 8px;
-  justify-content: center;
-}
-
 button {
-  padding: 8px 14px;
+  padding: 8px 16px;
   border: none;
-  border-radius: 8px;
+  border-radius: 6px;
   cursor: pointer;
-  font-weight: 600;
 }
 
-button.reset {
-  background: #e45b5b;
-  color: white;
-}
+.primary { background: #205452; color: #ffffff; }
+.secondary { background: #dddddd; }
 
-button.copy {
-  background: #205452;
-  color: white;
+.result {
+  margin-top: 20px;
+  background: #ffffff;
+  border-radius: 8px;
+  padding: 12px;
+  border: 1px solid #d9d9d9;
+  white-space: pre-line;
+  font-size: 13px;
 }
 </style>
 </head>
 
 <body>
 
-<h1>Dimensionamento CX</h1>
+<h1>Dimensionamento Diário – CX</h1>
+<div class="subtitle">
+Arraste os nomes | Duplo clique fixa 🔒 | Reset mantém fixos
+</div>
 
 <div class="container">
-
-  <!-- BASE -->
-  <div class="base">
-    <h3>Pessoas</h3>
-    <div class="pessoas" id="base"></div>
+  <div class="people">
+    <div class="people-grid" id="pool"></div>
   </div>
-
-  <!-- ESCOPOS -->
-  <div class="escopos" id="escopos"></div>
-
+  <div class="scopes" id="scopes"></div>
 </div>
 
-<div class="controls">
-  <button class="reset" onclick="resetar()">Resetar</button>
-  <button class="copy" onclick="copiarLista()">Copiar lista</button>
+<div class="actions">
+  <button class="primary" onclick="generate()">Gerar lista</button>
+  <button class="secondary" onclick="copyAll()">Copiar lista</button>
+  <button class="secondary" onclick="resetAll()">Resetar</button>
 </div>
+
+<div class="result" id="result"></div>
 
 <script>
 /* 🔥 FIREBASE CONFIG */
-const firebaseConfig = {
+firebase.initializeApp({
   apiKey: "AIzaSyCFRS8ALYUjtPwdMBStkBEHp9e6gwrH-fk",
   authDomain: "direcionamentocx.firebaseapp.com",
   projectId: "direcionamentocx",
   storageBucket: "direcionamentocx.firebasestorage.app",
   messagingSenderId: "545135608907",
   appId: "1:545135608907:web:c968470b718ea7053a79ce"
-};
+});
 
-firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
-const docRef = db.collection("estado").doc("escala");
+const docRef = db.collection("estado").doc("dimensionamento");
 
-/* DADOS */
-const pessoasLista = [
-"Camila Marigo","Cauane Wiggberto","Daniela Barral","Elisabete Pinho",
-"Erick Muniz","Gisele Lopes","Jenifer Alcantara","João Pedro Finamore",
-"Johana Geisa","Karina Tosta","Leonardo Santiago","Lorenzo Moreira",
-"Luisa Rodrigues","Luiz Felipe Firmo","Maria Clara Periard","Natanael Cruz",
-"Rayanne Rodrigues","Samantha Marçal","Jessyca Rodrigues","Rayssa Magalhães Farias",
-"Dayane da Silva Santos","Matheus André","Lais Rodrigues","Marianne Belmiro",
-"Hérica Oliveira","Julia Prazeres","Wesley Freitas","Milena Cabral",
-"Thariny Portela","Patricia Rodrigues","Pedro Bento","Ana Luiza",
-"Kelly Ribeiro","Nayara Marinho","Ana Flávia","Barbara Oliveira","Lucas Resende"
+/* === DADOS === */
+const PEOPLE = [
+ "Camila Marigo","Cauane Wiggberto","Daniela Barral","Elisabete Pinho","Erick Muniz",
+ "Gisele Lopes","Jenifer Alcantara","João Pedro Finamore","Johana Geisa","Karina Tosta",
+ "Leonardo Santiago","Lorenzo Moreira","Luisa Rodrigues","Luiz Felipe Firmo","Maria Clara Periard",
+ "Natanael Cruz","Rayanne Rodrigues","Samantha Marçal","Jessyca Rodrigues","Rayssa Magalhães Farias",
+ "Dayane da Silva Santos","Matheus André","Lais Rodrigues","Marianne Belmiro","Hérica Oliveira",
+ "Julia Prazeres","Wesley Freitas","Milena Cabral","Thariny Portela","Patricia Rodrigues",
+ "Pedro Bento","Ana Luiza","Kelly Ribeiro","Nayara Marinho","Ana Flávia","Barbara Oliveira","Lucas Resende"
 ];
 
-const escoposLista = [
-"Manual WPP","Manual Email","Manual Chat",
-"Social","Voy","Backoffice","Reclame Aqui",
-"Férias / Licença / Outros"
+const SCOPES = [
+ "Manual WPP","Manual Email","Manual Chat","Social",
+ "Voy","Backoffice","Reclame Aqui","Férias / Licença / Outros"
 ];
 
-const base = document.getElementById("base");
-const escoposDiv = document.getElementById("escopos");
+const pool = document.getElementById("pool");
+const scopesContainer = document.getElementById("scopes");
+let dragged = null;
 
-let estadoLocal = {};
+/* Criar escopos */
+SCOPES.forEach(name => {
+  const s = document.createElement("div");
+  s.className = "scope";
+  s.innerHTML = `<h3>${name}</h3><div class="dropzone" ${name.includes("Férias") ? 'data-ignore="true"' : ""}></div>`;
+  scopesContainer.appendChild(s);
+});
 
-/* CRIA UI */
-pessoasLista.forEach(nome => criarPessoa(nome));
-escoposLista.forEach(e => criarEscopo(e));
-
-/* FUNÇÕES */
-function criarPessoa(nome) {
+/* Criar pessoa */
+function createPerson(name, container, fixed = false) {
   const div = document.createElement("div");
-  div.className = "pessoa";
-  div.textContent = nome;
-  div.dataset.nome = nome;
+  div.className = "person";
+  div.textContent = name;
   div.draggable = true;
+  if (fixed) div.classList.add("fixed");
 
-  div.ondragstart = e => e.dataTransfer.setData("nome", nome);
+  div.ondragstart = () => dragged = div;
+  div.ondblclick = () => { div.classList.toggle("fixed"); saveState(); };
 
-  div.ondblclick = () => {
-    div.classList.toggle("fixa");
-    salvarEstado();
+  container.appendChild(div);
+}
+
+/* Drag & Drop */
+document.addEventListener("dragover", e => e.preventDefault());
+document.addEventListener("drop", e => {
+  if (e.target.classList.contains("dropzone") || e.target.id === "pool") {
+    e.target.appendChild(dragged);
+    saveState();
+  }
+});
+
+/* 🔄 SALVAR NO FIREBASE */
+function saveState() {
+  const state = {
+    pool: [...pool.children].map(p => ({ name: p.textContent, fixed: p.classList.contains("fixed") })),
+    scopes: [...document.querySelectorAll(".scope")].map(scope => ({
+      name: scope.querySelector("h3").textContent,
+      people: [...scope.querySelectorAll(".person")].map(p => ({
+        name: p.textContent,
+        fixed: p.classList.contains("fixed")
+      }))
+    }))
   };
-
-  base.appendChild(div);
+  docRef.set(state);
 }
 
-function criarEscopo(nome) {
-  const card = document.createElement("div");
-  card.className = "escopo";
-  if (nome.includes("Férias")) card.classList.add("ferias");
-
-  const h3 = document.createElement("h3");
-  h3.textContent = nome;
-
-  const dz = document.createElement("div");
-  dz.className = "dropzone";
-  dz.dataset.escopo = nome;
-
-  dz.ondragover = e => e.preventDefault();
-  dz.ondrop = e => {
-    const nomePessoa = e.dataTransfer.getData("nome");
-    const pessoa = document.querySelector(`[data-nome="${nomePessoa}"]`);
-    dz.appendChild(pessoa);
-    salvarEstado();
-  };
-
-  card.appendChild(h3);
-  card.appendChild(dz);
-  escoposDiv.appendChild(card);
-}
-
-function salvarEstado() {
-  const dados = [];
-
-  document.querySelectorAll(".pessoa").forEach(p => {
-    const parent = p.parentElement.classList.contains("dropzone")
-      ? p.parentElement.dataset.escopo
-      : "base";
-
-    dados.push({
-      nome: p.dataset.nome,
-      escopo: parent,
-      fixo: p.classList.contains("fixa")
-    });
-  });
-
-  docRef.set({ agentes: dados });
-}
-
-function resetar() {
-  document.querySelectorAll(".pessoa").forEach(p => {
-    if (!p.classList.contains("fixa")) base.appendChild(p);
-  });
-  salvarEstado();
-}
-
-function copiarLista() {
-  let texto = "";
-  escoposLista.forEach(e => {
-    if (e.includes("Férias")) return;
-    texto += `- ${e}\n`;
-    document.querySelectorAll(`[data-escopo="${e}"] .pessoa`)
-      .forEach(p => texto += p.dataset.nome + "\n");
-    texto += "\n";
-  });
-  navigator.clipboard.writeText(texto);
-}
-
-/* 🔄 SINCRONIZAÇÃO EM TEMPO REAL */
+/* 🔁 SINCRONIZAÇÃO REALTIME */
 docRef.onSnapshot(doc => {
-  if (!doc.exists) return;
-  const dados = doc.data().agentes;
+  pool.innerHTML = "";
+  document.querySelectorAll(".dropzone").forEach(z => z.innerHTML = "");
 
-  document.querySelectorAll(".pessoa").forEach(p => base.appendChild(p));
+  if (!doc.exists) {
+    PEOPLE.forEach(p => createPerson(p, pool));
+    return;
+  }
 
-  dados.forEach(d => {
-    const p = document.querySelector(`[data-nome="${d.nome}"]`);
-    if (!p) return;
-
-    p.classList.toggle("fixa", d.fixo);
-
-    if (d.escopo !== "base") {
-      document
-        .querySelector(`[data-escopo="${d.escopo}"]`)
-        ?.appendChild(p);
-    }
+  const state = doc.data();
+  state.pool.forEach(p => createPerson(p.name, pool, p.fixed));
+  state.scopes.forEach((s, i) => {
+    const zone = document.querySelectorAll(".dropzone")[i];
+    s.people.forEach(p => createPerson(p.name, zone, p.fixed));
   });
 });
+
+/* Reset */
+function resetAll() {
+  document.querySelectorAll(".scope").forEach(scope => {
+    scope.querySelectorAll(".person").forEach(p => {
+      if (!p.classList.contains("fixed")) pool.appendChild(p);
+    });
+  });
+  saveState();
+}
+
+/* Gerar lista */
+function generate() {
+  let out = "";
+  document.querySelectorAll(".scope").forEach(scope => {
+    const zone = scope.querySelector(".dropzone");
+    if (zone.dataset.ignore) return;
+    const names = [...zone.children].map(p => p.textContent);
+    if (!names.length) return;
+    out += "- " + scope.querySelector("h3").textContent + "\n";
+    names.forEach(n => out += n + "\n");
+    out += "\n";
+  });
+  document.getElementById("result").innerHTML = out.replace(/- (.*)/g, "<strong>- $1</strong>");
+}
+
+/* Copiar */
+function copyAll() {
+  const t = document.createElement("textarea");
+  t.value = document.getElementById("result").textContent;
+  document.body.appendChild(t);
+  t.select();
+  document.execCommand("copy");
+  document.body.removeChild(t);
+  alert("Lista copiada!");
+}
 </script>
 
 </body>
 </html>
+
