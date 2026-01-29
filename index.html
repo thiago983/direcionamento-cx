@@ -5,284 +5,348 @@
 <title>Dimensionamento CX</title>
 
 <style>
-* {
-  box-sizing: border-box;
-  font-family: Inter, Arial, sans-serif;
-}
-
 body {
-  background: #f4f6f7;
-  padding: 20px;
+  margin: 0;
+  font-family: Inter, Arial, sans-serif;
+  background: #f2f4f5;
   color: #1f2d2b;
 }
 
-h1 {
-  margin-bottom: 16px;
+h2 {
+  margin: 16px;
 }
 
-/* ===== LAYOUT ===== */
 .container {
-  display: grid;
-  grid-template-columns: 1fr 2.5fr;
-  gap: 20px;
-}
-
-/* ===== PESSOAS ===== */
-.pessoas {
-  background: #ffffff;
-  border-radius: 14px;
+  display: flex;
+  gap: 16px;
   padding: 16px;
-  min-height: 400px;
 }
 
-.pessoas h2 {
-  margin-bottom: 12px;
+/* ===== Pessoas ===== */
+.people {
+  width: 30%;
+  background: #ffffff;
+  border-radius: 10px;
+  padding: 12px;
+  box-shadow: 0 2px 6px rgba(0,0,0,.08);
 }
 
-.lista-pessoas {
+.people-list {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
-  min-height: 300px;   /* 🔑 FIX */
-  align-content: flex-start;
+  gap: 6px;
 }
 
-/* CARD DA PESSOA */
-.pessoa {
+.person {
   background: #205452;
   color: #ffffff;
-  padding: 6px 10px;
-  border-radius: 8px;
-  font-size: 13px;
+  padding: 8px 10px;
+  border-radius: 6px;
   cursor: grab;
-  position: relative;
+  font-size: 13px;
   user-select: none;
-  max-width: 160px;
+  position: relative;
+
+  /* 🔹 tamanho padrão */
+  width: 140px;
   text-align: center;
+  line-height: 1.2;
+  white-space: normal;
   word-break: break-word;
 }
 
-.pessoa.locked {
-  outline: 2px solid #f0ac63;
+.person.fixed {
+  outline: 2px solid #ffd166;
 }
 
-/* CADEADO */
-.lock-icon {
+/* 🔒 cadeado no canto superior direito */
+.person.fixed::after {
+  content: "🔒";
   position: absolute;
   top: -6px;
   right: -6px;
-  background: #f0ac63;
-  color: #000;
+  background: #ffffff;
   border-radius: 50%;
+  padding: 2px 4px;
   font-size: 11px;
-  width: 18px;
-  height: 18px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
 }
 
-/* ===== ESCOPOS ===== */
-.escopos {
+/* ===== Escopos ===== */
+.scopes {
+  flex: 1;
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-  gap: 16px;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 12px;
 }
 
-.escopo {
+.scope {
   background: #7caf94;
-  border-radius: 14px;
-  padding: 12px;
-  min-height: 140px;
+  border-radius: 10px;
+  padding: 10px;
   display: flex;
   flex-direction: column;
 }
 
-.escopo.ferias {
+/* 🟠 Férias */
+.scope.ferias {
   background: #f0ac63;
 }
 
-.escopo h3 {
+.scope h3 {
+  margin: 0 0 8px 0;
   text-align: center;
   font-size: 14px;
-  margin-bottom: 10px;
-  color: #0f2a25;
+  color: #ffffff;
 }
 
-/* DROPZONE */
 .dropzone {
   flex: 1;
-  background: rgba(255,255,255,0.25);
-  border-radius: 10px;
+  background: rgba(255,255,255,.15);
+  border-radius: 6px;
   padding: 8px;
+  min-height: 120px;
   display: flex;
-  flex-wrap: wrap;
+  flex-direction: column;
   gap: 6px;
-  align-content: flex-start;
 }
 
-/* pessoa dentro do escopo */
-.dropzone .pessoa {
-  background: #ffffff;
-  color: #205452;
-  max-width: unset;
+.dropzone.hover {
+  outline: 2px dashed #ffffff;
+  background: rgba(255,255,255,.25);
+}
+
+/* 👤 pessoa dentro do escopo: sempre 1 linha */
+.dropzone .person {
+  width: 100%;
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-align: left;
+  padding-right: 22px;
 }
 
-/* ===== CONTROLES ===== */
-.controls {
-  margin-top: 20px;
+/* ===== Ações ===== */
+.actions {
+  padding: 16px;
   display: flex;
-  gap: 12px;
+  gap: 8px;
 }
 
 button {
+  padding: 8px 14px;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.primary {
   background: #205452;
   color: #fff;
-  border: none;
-  border-radius: 8px;
-  padding: 8px 14px;
-  cursor: pointer;
+}
+
+.secondary {
+  background: #e0e0e0;
+}
+
+/* ===== Resultado ===== */
+#result {
+  margin: 16px;
+  padding: 12px;
+  background: #ffffff;
+  border-radius: 10px;
+  white-space: pre-line;
+  box-shadow: 0 2px 6px rgba(0,0,0,.08);
   font-size: 14px;
-}
-
-button.secondary {
-  background: #7caf94;
-}
-
-/* ===== LISTA ===== */
-textarea {
-  width: 100%;
-  height: 220px;
-  margin-top: 16px;
-  border-radius: 8px;
-  padding: 10px;
-  font-size: 13px;
 }
 </style>
 </head>
 
 <body>
 
-<h1>Dimensionamento Diário – CX</h1>
+<h2>Dimensionamento Diário</h2>
 
 <div class="container">
 
-  <div class="pessoas">
-    <h2>Pessoas</h2>
-    <div class="lista-pessoas" id="base"></div>
+  <div class="people">
+    <h3>Pessoas</h3>
+    <div class="people-list" id="people"></div>
   </div>
 
-  <div class="escopos" id="escopos"></div>
+  <div class="scopes" id="scopes"></div>
+
 </div>
 
-<div class="controls">
-  <button onclick="gerarLista()">Gerar lista</button>
-  <button onclick="copiarLista()" class="secondary">Copiar tudo</button>
-  <button onclick="resetar()" class="secondary">Resetar</button>
+<div class="actions">
+  <button class="primary" onclick="generate()">Gerar lista</button>
+  <button class="secondary" onclick="copyAll()">Copiar lista</button>
+  <button class="secondary" onclick="resetAll()">Resetar</button>
 </div>
 
-<textarea id="resultado"></textarea>
+<div id="result"></div>
 
 <script>
-const pessoas = [
-  "Camila Marigo","Cauane Wiggberto","Daniela Barral","Elisabete Pinho",
-  "Erick Muniz","Gisele Lopes","Jenifer Alcantara","João Pedro Finamore",
-  "Johana Geisa","Karina Tosta","Leonardo Santiago","Lorenzo Moreira",
-  "Luisa Rodrigues","Luiz Felipe Firmo","Maria Clara Periard","Natanael Cruz",
-  "Rayanne Rodrigues","Samantha Marçal","Jessyca Rodrigues",
-  "Rayssa Magalhães Farias","Dayane da Silva Santos","Matheus André",
-  "Lais Rodrigues","Marianne Belmiro","Hérica Oliveira","Julia Prazeres",
-  "Wesley Freitas","Milena Cabral","Thariny Portela","Patricia Rodrigues",
-  "Pedro Bento","Ana Luiza","Kelly Ribeiro","Nayara Marinho","Ana Flávia",
-  "Barbara Oliveira","Lucas Resende"
+const peopleNames = [
+"Camila Marigo","Cauane Wiggberto","Daniela Barral","Elisabete Pinho",
+"Erick Muniz","Gisele Lopes","Jenifer Alcantara","João Pedro Finamore",
+"Johana Geisa","Karina Tosta","Leonardo Santiago","Lorenzo Moreira",
+"Luisa Rodrigues","Luiz Felipe Firmo","Maria Clara Periard",
+"Natanael Cruz","Rayanne Rodrigues","Samantha Marçal","Jessyca Rodrigues",
+"Rayssa Magalhães Farias","Dayane da Silva Santos","Matheus André",
+"Lais Rodrigues","Marianne Belmiro","Hérica Oliveira","Julia Prazeres",
+"Wesley Freitas","Milena Cabral","Thariny Portela","Patricia Rodrigues",
+"Pedro Bento","Ana Luiza","Kelly Ribeiro","Nayara Marinho","Ana Flávia",
+"Barbara Oliveira","Lucas Resende"
 ];
 
-const escopos = [
-  "Manual WPP","Manual Email","Manual Chat",
-  "Social","Voy","Backoffice","Reclame Aqui",
-  "Férias / Licença / Outros"
+const scopes = [
+"Manual WPP","Manual Email","Manual Chat",
+"Social","Voy","Backoffice","Reclame Aqui",
+"Férias / Licença / Outros"
 ];
 
-let estado = JSON.parse(localStorage.getItem("dimensionamento")) || {
-  posicoes: {},
-  locked: []
-};
+let dragged = null;
 
-const base = document.getElementById("base");
-const escoposDiv = document.getElementById("escopos");
+function init() {
+  const people = document.getElementById("people");
 
-/* ESCOPOS */
-escopos.forEach(nome => {
-  const box = document.createElement("div");
-  box.className = "escopo" + (nome.includes("Férias") ? " ferias" : "");
-  box.innerHTML = `<h3>${nome}</h3><div class="dropzone" data-escopo="${nome}"></div>`;
-  escoposDiv.appendChild(box);
-});
+  peopleNames.forEach(name => {
+    const p = document.createElement("div");
+    p.className = "person";
+    p.textContent = name;
+    p.draggable = true;
 
-/* PESSOAS */
-pessoas.forEach(nome => {
-  const div = document.createElement("div");
-  div.className = "pessoa";
-  div.textContent = nome;
-  div.dataset.nome = nome;
-  div.draggable = true;
+    p.ondragstart = () => dragged = p;
+    p.ondragend = () => dragged = null;
 
-  div.addEventListener("dragstart", e =>
-    e.dataTransfer.setData("text/plain", nome)
-  );
+    p.ondblclick = () => {
+      p.classList.toggle("fixed");
+      saveState();
+    };
 
-  div.addEventListener("dblclick", () => toggleLock(div));
-  base.appendChild(div);
-});
-
-/* DRAG */
-document.querySelectorAll(".dropzone").forEach(zone => {
-  zone.addEventListener("dragover", e => e.preventDefault());
-  zone.addEventListener("drop", e => {
-    e.preventDefault();
-    const nome = e.dataTransfer.getData("text/plain");
-    const pessoa = document.querySelector(`.pessoa[data-nome="${nome}"]`);
-    if (pessoa) zone.appendChild(pessoa);
-    salvar();
+    people.appendChild(p);
   });
-});
 
-function toggleLock(div) {
-  div.classList.toggle("locked");
+  const scopesEl = document.getElementById("scopes");
+
+  scopes.forEach(s => {
+    const card = document.createElement("div");
+    card.className = "scope";
+    if (s.includes("Férias")) card.classList.add("ferias");
+
+    const h = document.createElement("h3");
+    h.textContent = s;
+
+    const dz = document.createElement("div");
+    dz.className = "dropzone";
+    if (s.includes("Férias")) dz.dataset.ignore = "true";
+
+    dz.ondragover = e => {
+      e.preventDefault();
+      dz.classList.add("hover");
+    };
+    dz.ondragleave = () => dz.classList.remove("hover");
+    dz.ondrop = e => {
+      e.preventDefault();
+      dz.classList.remove("hover");
+      if (dragged) {
+        dz.appendChild(dragged);
+        saveState();
+      }
+    };
+
+    card.appendChild(h);
+    card.appendChild(dz);
+    scopesEl.appendChild(card);
+  });
+
+  loadState();
 }
 
-function gerarLista() {
-  let texto = "";
-  document.querySelectorAll(".dropzone").forEach(zone => {
-    const escopo = zone.dataset.escopo;
-    if (escopo.includes("Férias")) return;
-    const nomes = [...zone.children].map(p => p.dataset.nome);
-    if (nomes.length) {
-      texto += `- **${escopo}**\n`;
-      nomes.forEach(n => texto += n + "\n");
-      texto += "\n";
+function generate() {
+  let out = "";
+  document.querySelectorAll(".scope").forEach(scope => {
+    const dz = scope.querySelector(".dropzone");
+    if (dz.dataset.ignore) return;
+
+    const names = [...dz.children].map(p => p.textContent);
+    if (!names.length) return;
+
+    out += "- " + scope.querySelector("h3").textContent + "\n";
+    names.forEach(n => out += n + "\n");
+    out += "\n";
+  });
+  document.getElementById("result").textContent = out;
+  saveState();
+}
+
+function copyAll() {
+  const text = document.getElementById("result").textContent;
+  if (!text.trim()) return alert("Gere a lista antes 🙂");
+
+  const t = document.createElement("textarea");
+  t.value = text;
+  document.body.appendChild(t);
+  t.select();
+  document.execCommand("copy");
+  document.body.removeChild(t);
+  alert("Lista copiada!");
+}
+
+function resetAll() {
+  document.querySelectorAll(".person").forEach(p => {
+    if (!p.classList.contains("fixed")) {
+      document.getElementById("people").appendChild(p);
     }
   });
-  resultado.value = texto.trim();
+  saveState();
 }
 
-function copiarLista() {
-  resultado.select();
-  document.execCommand("copy");
+function saveState() {
+  const state = {
+    fixed: [...document.querySelectorAll(".person.fixed")].map(p => p.textContent),
+    scopes: {}
+  };
+
+  document.querySelectorAll(".scope").forEach(scope => {
+    const name = scope.querySelector("h3").textContent;
+    const dz = scope.querySelector(".dropzone");
+    state.scopes[name] = [...dz.children].map(p => p.textContent);
+  });
+
+  localStorage.setItem("dimensionamento", JSON.stringify(state));
 }
 
-function resetar() {
-  document.querySelectorAll(".pessoa").forEach(p => base.appendChild(p));
-  salvar();
+function loadState() {
+  const raw = localStorage.getItem("dimensionamento");
+  if (!raw) return;
+
+  const state = JSON.parse(raw);
+
+  document.querySelectorAll(".person").forEach(p => {
+    if (state.fixed.includes(p.textContent)) {
+      p.classList.add("fixed");
+    }
+  });
+
+  Object.entries(state.scopes).forEach(([scope, names]) => {
+    const dz = [...document.querySelectorAll(".scope")]
+      .find(s => s.querySelector("h3").textContent === scope)
+      ?.querySelector(".dropzone");
+
+    names.forEach(n => {
+      const p = [...document.querySelectorAll(".person")]
+        .find(x => x.textContent === n);
+      if (p && dz) dz.appendChild(p);
+    });
+  });
 }
 
-function salvar() {
-  localStorage.setItem("dimensionamento", "ok");
-}
+init();
 </script>
-
 </body>
 </html>
+
+
 
 
