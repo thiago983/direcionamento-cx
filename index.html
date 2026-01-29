@@ -246,7 +246,7 @@ function generate() {
     const names = [...dz.children].map(p => p.textContent);
     if (!names.length) return;
 
-    out += "- " + scope.querySelector("h3").textContent + "\n";
+    out += "• " + scope.querySelector("h3").textContent + "\n";
     names.forEach(n => out += n + "\n");
     out += "\n";
   });
@@ -320,5 +320,6 @@ init();
 </script>
 </body>
 </html>
+
 
 
