@@ -9,7 +9,6 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 
 <style>
-/* === CSS ORIGINAL – NÃO ALTERADO === */
 body {
   margin: 0;
   padding: 24px;
@@ -18,11 +17,25 @@ body {
   color: #2b2b2b;
 }
 
-h1 { text-align: center; margin-bottom: 6px; }
-.subtitle { text-align: center; font-size: 13px; color: #666; margin-bottom: 24px; }
+h1 {
+  text-align: center;
+  margin-bottom: 6px;
+}
 
-.container { display: grid; grid-template-columns: 1fr 3fr; gap: 20px; }
+.subtitle {
+  text-align: center;
+  font-size: 13px;
+  color: #666;
+  margin-bottom: 24px;
+}
 
+.container {
+  display: grid;
+  grid-template-columns: 1fr 3fr;
+  gap: 20px;
+}
+
+/* Pessoas */
 .people {
   background: #ffffff;
   border-radius: 8px;
@@ -30,7 +43,11 @@ h1 { text-align: center; margin-bottom: 6px; }
   border: 1px solid #d9d9d9;
 }
 
-.people-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+.people-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+}
 
 .person {
   background: #205452;
@@ -56,7 +73,12 @@ h1 { text-align: center; margin-bottom: 6px; }
   font-size: 12px;
 }
 
-.scopes { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+/* Escopos */
+.scopes {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+}
 
 .scope {
   background: #7caf94;
@@ -65,10 +87,20 @@ h1 { text-align: center; margin-bottom: 6px; }
   color: #ffffff;
 }
 
-.scope h3 { text-align: center; font-size: 13px; margin-bottom: 8px; }
+.scope h3 {
+  text-align: center;
+  font-size: 13px;
+  margin-bottom: 8px;
+}
 
-.dropzone { min-height: 90px; display: flex; flex-direction: column; gap: 6px; }
+.dropzone {
+  min-height: 90px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
 
+/* Ações */
 .actions {
   margin-top: 20px;
   display: flex;
@@ -83,8 +115,14 @@ button {
   cursor: pointer;
 }
 
-.primary { background: #205452; color: #ffffff; }
-.secondary { background: #dddddd; }
+.primary {
+  background: #205452;
+  color: #ffffff;
+}
+
+.secondary {
+  background: #dddddd;
+}
 
 .result {
   margin-top: 20px;
@@ -106,10 +144,13 @@ Arraste os nomes | Duplo clique fixa 🔒 | Reset mantém fixos
 </div>
 
 <div class="container">
-  <div class="people">
-    <div class="people-grid" id="pool"></div>
-  </div>
-  <div class="scopes" id="scopes"></div>
+
+<div class="people">
+  <div class="people-grid" id="pool"></div>
+</div>
+
+<div class="scopes" id="scopes"></div>
+
 </div>
 
 <div class="actions">
@@ -134,7 +175,7 @@ firebase.initializeApp({
 const db = firebase.firestore();
 const docRef = db.collection("estado").doc("dimensionamento");
 
-/* === DADOS === */
+/* Dados */
 const PEOPLE = [
  "Camila Marigo","Cauane Wiggberto","Daniela Barral","Elisabete Pinho","Erick Muniz",
  "Gisele Lopes","Jenifer Alcantara","João Pedro Finamore","Johana Geisa","Karina Tosta",
@@ -158,7 +199,10 @@ let dragged = null;
 SCOPES.forEach(name => {
   const s = document.createElement("div");
   s.className = "scope";
-  s.innerHTML = `<h3>${name}</h3><div class="dropzone" ${name.includes("Férias") ? 'data-ignore="true"' : ""}></div>`;
+  s.innerHTML = `
+    <h3>${name}</h3>
+    <div class="dropzone" ${name.includes("Férias") ? 'data-ignore="true"' : ""}></div>
+  `;
   scopesContainer.appendChild(s);
 });
 
@@ -168,27 +212,48 @@ function createPerson(name, container, fixed = false) {
   div.className = "person";
   div.textContent = name;
   div.draggable = true;
+
   if (fixed) div.classList.add("fixed");
 
   div.ondragstart = () => dragged = div;
-  div.ondblclick = () => { div.classList.toggle("fixed"); saveState(); };
+
+  div.ondblclick = () => {
+    div.classList.toggle("fixed");
+    saveState();
+  };
 
   container.appendChild(div);
 }
 
-/* Drag & Drop */
+/* Drag & Drop — CORRIGIDO */
 document.addEventListener("dragover", e => e.preventDefault());
 document.addEventListener("drop", e => {
-  if (e.target.classList.contains("dropzone") || e.target.id === "pool") {
-    e.target.appendChild(dragged);
+
+  /* Soltar na base */
+  if (e.target.id === "pool" || e.target.closest("#pool")) {
+    pool.appendChild(dragged);
     saveState();
+    return;
+  }
+
+  /* Soltar em QUALQUER PARTE do escopo */
+  const scope = e.target.closest(".scope");
+  if (scope) {
+    const zone = scope.querySelector(".dropzone");
+    if (zone) {
+      zone.appendChild(dragged);
+      saveState();
+    }
   }
 });
 
-/* 🔄 SALVAR NO FIREBASE */
+/* Salvar estado no Firebase */
 function saveState() {
   const state = {
-    pool: [...pool.children].map(p => ({ name: p.textContent, fixed: p.classList.contains("fixed") })),
+    pool: [...pool.children].map(p => ({
+      name: p.textContent,
+      fixed: p.classList.contains("fixed")
+    })),
     scopes: [...document.querySelectorAll(".scope")].map(scope => ({
       name: scope.querySelector("h3").textContent,
       people: [...scope.querySelectorAll(".person")].map(p => ({
@@ -200,7 +265,7 @@ function saveState() {
   docRef.set(state);
 }
 
-/* 🔁 SINCRONIZAÇÃO REALTIME */
+/* Sincronização realtime */
 docRef.onSnapshot(doc => {
   pool.innerHTML = "";
   document.querySelectorAll(".dropzone").forEach(z => z.innerHTML = "");
@@ -231,27 +296,39 @@ function resetAll() {
 /* Gerar lista */
 function generate() {
   let out = "";
+
   document.querySelectorAll(".scope").forEach(scope => {
     const zone = scope.querySelector(".dropzone");
     if (zone.dataset.ignore) return;
+
     const names = [...zone.children].map(p => p.textContent);
     if (!names.length) return;
+
     out += "- " + scope.querySelector("h3").textContent + "\n";
     names.forEach(n => out += n + "\n");
     out += "\n";
   });
-  document.getElementById("result").innerHTML = out.replace(/- (.*)/g, "<strong>- $1</strong>");
+
+  document.getElementById("result").innerHTML =
+    out.replace(/- (.*)/g, "<strong>- $1</strong>");
 }
 
-/* Copiar */
+/* Copiar lista */
 function copyAll() {
-  const t = document.createElement("textarea");
-  t.value = document.getElementById("result").textContent;
-  document.body.appendChild(t);
-  t.select();
+  const result = document.getElementById("result");
+  if (!result.textContent.trim()) {
+    alert("Gere a lista antes de copiar 🙂");
+    return;
+  }
+
+  const temp = document.createElement("textarea");
+  temp.value = result.textContent;
+  document.body.appendChild(temp);
+  temp.select();
   document.execCommand("copy");
-  document.body.removeChild(t);
-  alert("Lista copiada!");
+  document.body.removeChild(temp);
+
+  alert("Lista copiada com sucesso!");
 }
 </script>
 
