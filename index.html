@@ -4,6 +4,10 @@
 <meta charset="UTF-8">
 <title>Direcionamento Diário – CX</title>
 
+<!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+
 <style>
 body {
   margin: 0;
@@ -16,7 +20,6 @@ body {
 h1 {
   text-align: center;
   margin-bottom: 6px;
-  cursor: default;
 }
 
 .subtitle {
@@ -135,16 +138,19 @@ button {
 
 <body>
 
-<h1>Direcionamento Diário – CX</h1>
+<h1>Dimensionamento Diário – CX</h1>
 <div class="subtitle">
-Arraste os nomes | Duplo clique fixa agentes no escopo 🔒 | Reset limpa todos os cards mas mantém os fixos
+Arraste os nomes | Duplo clique fixa 🔒 | Reset mantém fixos
 </div>
 
 <div class="container">
-  <div class="people">
-    <div class="people-grid" id="pool"></div>
-  </div>
-  <div class="scopes" id="scopes"></div>
+
+<div class="people">
+  <div class="people-grid" id="pool"></div>
+</div>
+
+<div class="scopes" id="scopes"></div>
+
 </div>
 
 <div class="actions">
@@ -155,20 +161,21 @@ Arraste os nomes | Duplo clique fixa agentes no escopo 🔒 | Reset limpa todos 
 
 <div class="result" id="result"></div>
 
-<script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-
-const firebaseConfig = {
+<script>
+/* 🔥 FIREBASE CONFIG */
+firebase.initializeApp({
   apiKey: "AIzaSyCFRS8ALYUjtPwdMBStkBEHp9e6gwrH-fk",
   authDomain: "direcionamentocx.firebaseapp.com",
-  projectId: "direcionamentocx"
-};
+  projectId: "direcionamentocx",
+  storageBucket: "direcionamentocx.firebasestorage.app",
+  messagingSenderId: "545135608907",
+  appId: "1:545135608907:web:c968470b718ea7053a79ce"
+});
 
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
-const ref = doc(db, "dimensionamento", "estado");
+const db = firebase.firestore();
+const docRef = db.collection("estado").doc("dimensionamento");
 
+/* Dados */
 const PEOPLE = [
  "Camila Marigo","Cauane Wiggberto","Elisabete Pinho","Erick Muniz",
  "Gisele Lopes","Jenifer Alcantara","João Finamore","Johanna Geisa","Karina Tosta",
@@ -176,7 +183,7 @@ const PEOPLE = [
  "Natanael Cruz","Rayanne Rodrigues","Samantha Marçal","Jessyca Rodrigues","Rayssa Magalhães",
  "Dayane da Silva","Matheus André","Lais Rodrigues","Marianne Belmiro","Hérica Oliveira",
  "Julia Prazeres","Wesley Freitas","Milena Cabral","Thariny Portela","Patricia Rodrigues",
- "Pedro Bento","Ana Luiza","Kelly Ribeiro","Nayara Borges","Ana Flávia","Barbara Oliveira","Lucas Resende","Ana Luiza E."
+ "Pedro Bento","Ana Luiza","Kelly Ribeiro","Nayara Marinho","Ana Flávia","Barbara Oliveira","Lucas Resende","Ana Luiza E."
 ];
 
 const SCOPES = [
@@ -185,43 +192,63 @@ const SCOPES = [
 ];
 
 const pool = document.getElementById("pool");
-const scopesEl = document.getElementById("scopes");
+const scopesContainer = document.getElementById("scopes");
 let dragged = null;
 
-/* UI */
+/* Criar escopos */
 SCOPES.forEach(name => {
   const s = document.createElement("div");
   s.className = "scope";
-  s.innerHTML = `<h3>${name}</h3><div class="dropzone"></div>`;
-  scopesEl.appendChild(s);
+  s.innerHTML = `
+    <h3>${name}</h3>
+    <div class="dropzone" ${name.includes("Férias") ? 'data-ignore="true"' : ""}></div>
+  `;
+  scopesContainer.appendChild(s);
 });
 
-function createPerson(name, fixed=false) {
-  const d = document.createElement("div");
-  d.className = "person";
-  d.textContent = name;
-  d.draggable = true;
-  if (fixed) d.classList.add("fixed");
+/* Criar pessoa */
+function createPerson(name, container, fixed = false) {
+  const div = document.createElement("div");
+  div.className = "person";
+  div.textContent = name;
+  div.draggable = true;
 
-  d.ondragstart = () => dragged = d;
-  d.ondblclick = () => {
-    d.classList.toggle("fixed");
-    save();
+  if (fixed) div.classList.add("fixed");
+
+  div.ondragstart = () => dragged = div;
+
+  div.ondblclick = () => {
+    div.classList.toggle("fixed");
+    saveState();
   };
-  return d;
+
+  container.appendChild(div);
 }
 
-/* Drag */
+/* Drag & Drop — CORRIGIDO */
 document.addEventListener("dragover", e => e.preventDefault());
 document.addEventListener("drop", e => {
-  if (e.target.classList.contains("dropzone") || e.target.id === "pool") {
-    e.target.appendChild(dragged);
-    save();
+
+  /* Soltar na base */
+  if (e.target.id === "pool" || e.target.closest("#pool")) {
+    pool.appendChild(dragged);
+    saveState();
+    return;
+  }
+
+  /* Soltar em QUALQUER PARTE do escopo */
+  const scope = e.target.closest(".scope");
+  if (scope) {
+    const zone = scope.querySelector(".dropzone");
+    if (zone) {
+      zone.appendChild(dragged);
+      saveState();
+    }
   }
 });
 
-/* Firestore */
-function save() {
+/* Salvar estado no Firebase */
+function saveState() {
   const state = {
     pool: [...pool.children].map(p => ({
       name: p.textContent,
@@ -235,74 +262,79 @@ function save() {
       }))
     }))
   };
-  setDoc(ref, state);
+  docRef.set(state);
 }
 
-onSnapshot(ref, snap => {
+/* Sincronização realtime */
+docRef.onSnapshot(doc => {
   pool.innerHTML = "";
   document.querySelectorAll(".dropzone").forEach(z => z.innerHTML = "");
 
-  if (!snap.exists()) {
-    PEOPLE.forEach(p => pool.appendChild(createPerson(p)));
-    save();
+  if (!doc.exists) {
+    PEOPLE.forEach(p => createPerson(p, pool));
     return;
   }
 
-  const state = snap.data();
-  state.pool.forEach(p => pool.appendChild(createPerson(p.name, p.fixed)));
-  state.scopes.forEach((s,i) => {
+  const state = doc.data();
+  state.pool.forEach(p => createPerson(p.name, pool, p.fixed));
+  state.scopes.forEach((s, i) => {
     const zone = document.querySelectorAll(".dropzone")[i];
-    s.people.forEach(p => zone.appendChild(createPerson(p.name, p.fixed)));
+    s.people.forEach(p => createPerson(p.name, zone, p.fixed));
   });
 });
 
-/* ✅ RESET CORRIGIDO */
-window.resetAll = () => {
-  const newPool = [];
-  const newScopes = [];
-
+/* Reset */
+function resetAll() {
   document.querySelectorAll(".scope").forEach(scope => {
-    const fixedPeople = [];
     scope.querySelectorAll(".person").forEach(p => {
-      if (p.classList.contains("fixed")) {
-        fixedPeople.push({ name: p.textContent, fixed: true });
-      } else {
-        newPool.push({ name: p.textContent, fixed: false });
-      }
-    });
-
-    newScopes.push({
-      name: scope.querySelector("h3").textContent,
-      people: fixedPeople
+      if (!p.classList.contains("fixed")) pool.appendChild(p);
     });
   });
+  saveState();
+}
 
-  setDoc(ref, {
-    pool: newPool,
-    scopes: newScopes
-  });
-};
-
-/* Lista */
-window.generate = () => {
+/* Gerar lista */
+function generate() {
   let out = "";
+
   document.querySelectorAll(".scope").forEach(scope => {
-    const names = [...scope.querySelectorAll(".person")].map(p => p.textContent);
+    const zone = scope.querySelector(".dropzone");
+    if (zone.dataset.ignore) return;
+
+    const names = [...zone.children].map(p => p.textContent);
     if (!names.length) return;
-    out += "→ " + scope.querySelector("h3").textContent + "\n";
+
+    out += "• " + scope.querySelector("h3").textContent + "\n";
     names.forEach(n => out += n + "\n");
     out += "\n";
   });
+
   document.getElementById("result").innerHTML =
     out.replace(/- (.*)/g, "<strong>- $1</strong>");
-};
+}
 
-window.copyAll = () => {
-  navigator.clipboard.writeText(document.getElementById("result").textContent);
-  alert("Lista copiada!");
-};
+/* Copiar lista */
+function copyAll() {
+  const result = document.getElementById("result");
+  if (!result.textContent.trim()) {
+    alert("Gere a lista antes de copiar 🙂");
+    return;
+  }
+
+  const temp = document.createElement("textarea");
+  temp.value = result.textContent;
+  document.body.appendChild(temp);
+  temp.select();
+  document.execCommand("copy");
+  document.body.removeChild(temp);
+
+  alert("Lista copiada com sucesso!");
+}
 </script>
 
 </body>
 </html>
+
+
+
 
