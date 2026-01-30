@@ -2,11 +2,7 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<title>Direcionamento Diário – CX</title>
-
-<!-- Firebase -->
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<title>Dimensionamento Diário – CX</title>
 
 <style>
 body {
@@ -20,6 +16,7 @@ body {
 h1 {
   text-align: center;
   margin-bottom: 6px;
+  cursor: default;
 }
 
 .subtitle {
@@ -96,7 +93,7 @@ h1 {
 .dropzone {
   min-height: 90px;
   display: flex;
-  flex-direction: column;
+  flex-wrap: wrap;
   gap: 6px;
 }
 
@@ -138,7 +135,7 @@ button {
 
 <body>
 
-<h1>Dimensionamento Diário – CX</h1>
+<h1 id="adminTitle">Dimensionamento Diário – CX</h1>
 <div class="subtitle">
 Arraste os nomes | Duplo clique fixa 🔒 | Reset mantém fixos
 </div>
@@ -162,28 +159,14 @@ Arraste os nomes | Duplo clique fixa 🔒 | Reset mantém fixos
 <div class="result" id="result"></div>
 
 <script>
-/* 🔥 FIREBASE CONFIG */
-firebase.initializeApp({
-  apiKey: "AIzaSyCFRS8ALYUjtPwdMBStkBEHp9e6gwrH-fk",
-  authDomain: "direcionamentocx.firebaseapp.com",
-  projectId: "direcionamentocx",
-  storageBucket: "direcionamentocx.firebasestorage.app",
-  messagingSenderId: "545135608907",
-  appId: "1:545135608907:web:c968470b718ea7053a79ce"
-});
-
-const db = firebase.firestore();
-const docRef = db.collection("estado").doc("dimensionamento");
-
-/* Dados */
 const PEOPLE = [
  "Camila Marigo","Cauane Wiggberto","Elisabete Pinho","Erick Muniz",
- "Gisele Lopes","Jenifer Alcantara","João Finamore","Johanna Geisa","Karina Tosta",
+ "Gisele Lopes","Jenifer Alcantara","João Pedro Finamore","Johana Geisa","Karina Tosta",
  "Leonardo Santiago","Lorenzo Moreira","Luisa Rodrigues","Luiz Felipe Firmo","Maria Clara Periard",
- "Natanael Cruz","Rayanne Rodrigues","Samantha Marçal","Jessyca Rodrigues","Rayssa Magalhães",
+ "Natanael Cruz","Rayanne Rodrigues","Samantha Marçal","Jessyca Rodrigues","Rayssa Magalhães Farias",
  "Dayane da Silva","Matheus André","Lais Rodrigues","Marianne Belmiro","Hérica Oliveira",
  "Julia Prazeres","Wesley Freitas","Milena Cabral","Thariny Portela","Patricia Rodrigues",
- "Pedro Bento","Ana Luiza","Kelly Ribeiro","Nayara Marinho","Ana Flávia","Barbara Oliveira","Lucas Resende","Ana Luiza E."
+ "Pedro Bento","Ana Luiza","Kelly Ribeiro","Nayara Marinho","Ana Flávia","Barbara Oliveira","Lucas Resende"
 ];
 
 const SCOPES = [
@@ -201,7 +184,7 @@ SCOPES.forEach(name => {
   s.className = "scope";
   s.innerHTML = `
     <h3>${name}</h3>
-    <div class="dropzone" ${name.includes("Férias") ? 'data-ignore="true"' : ""}></div>
+    <div class="dropzone"></div>
   `;
   scopesContainer.appendChild(s);
 });
@@ -225,29 +208,16 @@ function createPerson(name, container, fixed = false) {
   container.appendChild(div);
 }
 
-/* Drag & Drop — CORRIGIDO */
+/* Drag */
 document.addEventListener("dragover", e => e.preventDefault());
 document.addEventListener("drop", e => {
-
-  /* Soltar na base */
-  if (e.target.id === "pool" || e.target.closest("#pool")) {
-    pool.appendChild(dragged);
+  if (e.target.classList.contains("dropzone") || e.target.id === "pool") {
+    e.target.appendChild(dragged);
     saveState();
-    return;
-  }
-
-  /* Soltar em QUALQUER PARTE do escopo */
-  const scope = e.target.closest(".scope");
-  if (scope) {
-    const zone = scope.querySelector(".dropzone");
-    if (zone) {
-      zone.appendChild(dragged);
-      saveState();
-    }
   }
 });
 
-/* Salvar estado no Firebase */
+/* Estado */
 function saveState() {
   const state = {
     pool: [...pool.children].map(p => ({
@@ -262,78 +232,76 @@ function saveState() {
       }))
     }))
   };
-  docRef.set(state);
+  localStorage.setItem("dimensionamentoCX", JSON.stringify(state));
 }
 
-/* Sincronização realtime */
-docRef.onSnapshot(doc => {
-  pool.innerHTML = "";
-  document.querySelectorAll(".dropzone").forEach(z => z.innerHTML = "");
-
-  if (!doc.exists) {
+function loadState() {
+  const saved = localStorage.getItem("dimensionamentoCX");
+  if (!saved) {
     PEOPLE.forEach(p => createPerson(p, pool));
     return;
   }
 
-  const state = doc.data();
+  const state = JSON.parse(saved);
   state.pool.forEach(p => createPerson(p.name, pool, p.fixed));
+
   state.scopes.forEach((s, i) => {
     const zone = document.querySelectorAll(".dropzone")[i];
     s.people.forEach(p => createPerson(p.name, zone, p.fixed));
   });
-});
+}
 
-/* Reset */
+/* Reset normal */
 function resetAll() {
-  document.querySelectorAll(".scope").forEach(scope => {
-    scope.querySelectorAll(".person").forEach(p => {
-      if (!p.classList.contains("fixed")) pool.appendChild(p);
-    });
+  document.querySelectorAll(".person").forEach(p => {
+    if (!p.classList.contains("fixed")) pool.appendChild(p);
   });
   saveState();
 }
 
-/* Gerar lista */
+/* 🔒 ADMIN SECRETO */
+let adminClicks = 0;
+let adminTimer = null;
+
+document.getElementById("adminTitle").addEventListener("click", () => {
+  adminClicks++;
+
+  clearTimeout(adminTimer);
+  adminTimer = setTimeout(() => adminClicks = 0, 1200);
+
+  if (adminClicks === 5) {
+    adminClicks = 0;
+    if (confirm("Deseja reinicializar a base a partir do HTML?")) {
+      localStorage.removeItem("dimensionamentoCX");
+      location.reload();
+    }
+  }
+});
+
+/* Lista */
 function generate() {
   let out = "";
-
   document.querySelectorAll(".scope").forEach(scope => {
-    const zone = scope.querySelector(".dropzone");
-    if (zone.dataset.ignore) return;
-
-    const names = [...zone.children].map(p => p.textContent);
+    const names = [...scope.querySelectorAll(".person")].map(p => p.textContent);
     if (!names.length) return;
-
-    out += "• " + scope.querySelector("h3").textContent + "\n";
+    out += "- " + scope.querySelector("h3").textContent + "\n";
     names.forEach(n => out += n + "\n");
     out += "\n";
   });
-
   document.getElementById("result").innerHTML =
     out.replace(/- (.*)/g, "<strong>- $1</strong>");
+  saveState();
 }
 
-/* Copiar lista */
 function copyAll() {
   const result = document.getElementById("result");
-  if (!result.textContent.trim()) {
-    alert("Gere a lista antes de copiar 🙂");
-    return;
-  }
-
-  const temp = document.createElement("textarea");
-  temp.value = result.textContent;
-  document.body.appendChild(temp);
-  temp.select();
-  document.execCommand("copy");
-  document.body.removeChild(temp);
-
-  alert("Lista copiada com sucesso!");
+  if (!result.textContent.trim()) return alert("Gere a lista antes 🙂");
+  navigator.clipboard.writeText(result.textContent);
+  alert("Lista copiada!");
 }
+
+loadState();
 </script>
 
 </body>
 </html>
-
-
-
