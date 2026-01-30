@@ -55,6 +55,9 @@ h1 {
   text-align: center;
   cursor: grab;
   user-select: none;
+
+  white-space: nowrap;     /* ✅ mantém em uma linha */
+  width: fit-content;      /* ✅ tamanho normal do card */
 }
 
 .person.fixed {
@@ -95,6 +98,7 @@ h1 {
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
+  align-items: flex-start; /* ✅ impede cards gigantes */
 }
 
 /* Ações */
@@ -182,10 +186,7 @@ let dragged = null;
 SCOPES.forEach(name => {
   const s = document.createElement("div");
   s.className = "scope";
-  s.innerHTML = `
-    <h3>${name}</h3>
-    <div class="dropzone"></div>
-  `;
+  s.innerHTML = `<h3>${name}</h3><div class="dropzone"></div>`;
   scopesContainer.appendChild(s);
 });
 
@@ -195,16 +196,12 @@ function createPerson(name, container, fixed = false) {
   div.className = "person";
   div.textContent = name;
   div.draggable = true;
-
   if (fixed) div.classList.add("fixed");
-
   div.ondragstart = () => dragged = div;
-
   div.ondblclick = () => {
     div.classList.toggle("fixed");
     saveState();
   };
-
   container.appendChild(div);
 }
 
@@ -241,42 +238,21 @@ function loadState() {
     PEOPLE.forEach(p => createPerson(p, pool));
     return;
   }
-
   const state = JSON.parse(saved);
   state.pool.forEach(p => createPerson(p.name, pool, p.fixed));
-
   state.scopes.forEach((s, i) => {
     const zone = document.querySelectorAll(".dropzone")[i];
     s.people.forEach(p => createPerson(p.name, zone, p.fixed));
   });
 }
 
-/* Reset normal */
+/* Reset */
 function resetAll() {
   document.querySelectorAll(".person").forEach(p => {
     if (!p.classList.contains("fixed")) pool.appendChild(p);
   });
   saveState();
 }
-
-/* 🔒 ADMIN SECRETO */
-let adminClicks = 0;
-let adminTimer = null;
-
-document.getElementById("adminTitle").addEventListener("click", () => {
-  adminClicks++;
-
-  clearTimeout(adminTimer);
-  adminTimer = setTimeout(() => adminClicks = 0, 1200);
-
-  if (adminClicks === 5) {
-    adminClicks = 0;
-    if (confirm("Deseja reinicializar a base a partir do HTML?")) {
-      localStorage.removeItem("dimensionamentoCX");
-      location.reload();
-    }
-  }
-});
 
 /* Lista */
 function generate() {
@@ -305,4 +281,3 @@ loadState();
 
 </body>
 </html>
-
