@@ -137,7 +137,7 @@ button {
 
 <h1>Direcionamento Diário – CX</h1>
 <div class="subtitle">
-Arraste os nomes | Duplo clique fixa 🔒 | Reset mantém fixos
+Arraste os nomes | Duplo clique fixa agentes no escopo 🔒 | Reset limpa todos os cards mas mantém os fixos
 </div>
 
 <div class="container">
@@ -155,12 +155,10 @@ Arraste os nomes | Duplo clique fixa 🔒 | Reset mantém fixos
 
 <div class="result" id="result"></div>
 
-<!-- Firebase -->
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-/* 🔥 CONFIG */
 const firebaseConfig = {
   apiKey: "AIzaSyCFRS8ALYUjtPwdMBStkBEHp9e6gwrH-fk",
   authDomain: "direcionamentocx.firebaseapp.com",
@@ -171,7 +169,6 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const ref = doc(db, "dimensionamento", "estado");
 
-/* BASE */
 const PEOPLE = [
  "Camila Marigo","Cauane Wiggberto","Elisabete Pinho","Erick Muniz",
  "Gisele Lopes","Jenifer Alcantara","João Finamore","Johanna Geisa","Karina Tosta",
@@ -226,7 +223,10 @@ document.addEventListener("drop", e => {
 /* Firestore */
 function save() {
   const state = {
-    pool: [...pool.children].map(p => ({ name: p.textContent, fixed: p.classList.contains("fixed") })),
+    pool: [...pool.children].map(p => ({
+      name: p.textContent,
+      fixed: p.classList.contains("fixed")
+    })),
     scopes: [...document.querySelectorAll(".scope")].map(scope => ({
       name: scope.querySelector("h3").textContent,
       people: [...scope.querySelectorAll(".person")].map(p => ({
@@ -256,13 +256,32 @@ onSnapshot(ref, snap => {
   });
 });
 
-/* Reset */
-function resetAll() {
-  document.querySelectorAll(".person").forEach(p => {
-    if (!p.classList.contains("fixed")) pool.appendChild(p);
+/* ✅ RESET CORRIGIDO */
+window.resetAll = () => {
+  const newPool = [];
+  const newScopes = [];
+
+  document.querySelectorAll(".scope").forEach(scope => {
+    const fixedPeople = [];
+    scope.querySelectorAll(".person").forEach(p => {
+      if (p.classList.contains("fixed")) {
+        fixedPeople.push({ name: p.textContent, fixed: true });
+      } else {
+        newPool.push({ name: p.textContent, fixed: false });
+      }
+    });
+
+    newScopes.push({
+      name: scope.querySelector("h3").textContent,
+      people: fixedPeople
+    });
   });
-  save();
-}
+
+  setDoc(ref, {
+    pool: newPool,
+    scopes: newScopes
+  });
+};
 
 /* Lista */
 window.generate = () => {
@@ -270,11 +289,12 @@ window.generate = () => {
   document.querySelectorAll(".scope").forEach(scope => {
     const names = [...scope.querySelectorAll(".person")].map(p => p.textContent);
     if (!names.length) return;
-    out += "• " + scope.querySelector("h3").textContent + "\n";
+    out += "→ " + scope.querySelector("h3").textContent + "\n";
     names.forEach(n => out += n + "\n");
     out += "\n";
   });
-  document.getElementById("result").innerHTML = out.replace(/- (.*)/g, "<strong>- $1</strong>");
+  document.getElementById("result").innerHTML =
+    out.replace(/- (.*)/g, "<strong>- $1</strong>");
 };
 
 window.copyAll = () => {
@@ -285,3 +305,4 @@ window.copyAll = () => {
 
 </body>
 </html>
+
