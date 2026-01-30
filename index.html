@@ -16,7 +16,7 @@ body {
 h1 {
   text-align: center;
   margin-bottom: 6px;
-  cursor: pointer;
+  cursor: default;
 }
 
 .subtitle {
@@ -49,13 +49,12 @@ h1 {
 .person {
   background: #205452;
   color: #ffffff;
-  padding: 6px 8px;
+  padding: 6px;
   font-size: 12px;
   border-radius: 6px;
   text-align: center;
   cursor: grab;
   user-select: none;
-  white-space: nowrap;
 }
 
 .person.fixed {
@@ -94,7 +93,7 @@ h1 {
 .dropzone {
   min-height: 90px;
   display: flex;
-  flex-direction: column; /* UMA PESSOA POR LINHA */
+  flex-direction: column;
   gap: 6px;
 }
 
@@ -136,9 +135,9 @@ button {
 
 <body>
 
-<h1 id="adminTitle">Direcionamento Diário – CX</h1>
+<h1>Direcionamento Diário – CX</h1>
 <div class="subtitle">
-Arraste os nomes | Duplo clique para fixar agente em escopo 🔒 | Reset limpa os card mas mantém os fixos
+Arraste os nomes | Duplo clique fixa 🔒 | Reset mantém fixos
 </div>
 
 <div class="container">
@@ -156,33 +155,30 @@ Arraste os nomes | Duplo clique para fixar agente em escopo 🔒 | Reset limpa o
 
 <div class="result" id="result"></div>
 
-<!-- FIREBASE -->
+<!-- Firebase -->
 <script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-/* 🔥 Firebase config */
+/* 🔥 CONFIG */
 const firebaseConfig = {
   apiKey: "AIzaSyCFRS8ALYUjtPwdMBStkBEHp9e6gwrH-fk",
   authDomain: "direcionamentocx.firebaseapp.com",
-  projectId: "direcionamentocx",
-  storageBucket: "direcionamentocx.firebasestorage.app",
-  messagingSenderId: "545135608907",
-  appId: "1:545135608907:web:c968470b718ea7053a79ce"
+  projectId: "direcionamentocx"
 };
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
-const docRef = doc(db, "dimensionamento", "global");
+const ref = doc(db, "dimensionamento", "estado");
 
-/* Dados */
+/* BASE */
 const PEOPLE = [
  "Camila Marigo","Cauane Wiggberto","Elisabete Pinho","Erick Muniz",
  "Gisele Lopes","Jenifer Alcantara","João Finamore","Johanna Geisa","Karina Tosta",
  "Leonardo Santiago","Lorenzo Moreira","Luisa Rodrigues","Luiz Felipe Firmo","Maria Clara Periard",
  "Natanael Cruz","Rayanne Rodrigues","Samantha Marçal","Jessyca Rodrigues","Rayssa Magalhães",
  "Dayane da Silva","Matheus André","Lais Rodrigues","Marianne Belmiro","Hérica Oliveira",
- "Julia Prazeres","Wesley Freitas","Milena Cabral","Patricia Rodrigues",
+ "Julia Prazeres","Wesley Freitas","Milena Cabral","Thariny Portela","Patricia Rodrigues",
  "Pedro Bento","Ana Luiza","Kelly Ribeiro","Nayara Borges","Ana Flávia","Barbara Oliveira","Lucas Resende","Ana Luiza E."
 ];
 
@@ -192,50 +188,45 @@ const SCOPES = [
 ];
 
 const pool = document.getElementById("pool");
-const scopesContainer = document.getElementById("scopes");
+const scopesEl = document.getElementById("scopes");
 let dragged = null;
 
-/* Criar escopos */
+/* UI */
 SCOPES.forEach(name => {
   const s = document.createElement("div");
   s.className = "scope";
   s.innerHTML = `<h3>${name}</h3><div class="dropzone"></div>`;
-  scopesContainer.appendChild(s);
+  scopesEl.appendChild(s);
 });
 
-/* Criar pessoa */
 function createPerson(name, fixed=false) {
-  const div = document.createElement("div");
-  div.className = "person";
-  div.textContent = name;
-  div.draggable = true;
-  if (fixed) div.classList.add("fixed");
+  const d = document.createElement("div");
+  d.className = "person";
+  d.textContent = name;
+  d.draggable = true;
+  if (fixed) d.classList.add("fixed");
 
-  div.ondragstart = () => dragged = div;
-  div.ondblclick = () => {
-    div.classList.toggle("fixed");
-    saveState();
+  d.ondragstart = () => dragged = d;
+  d.ondblclick = () => {
+    d.classList.toggle("fixed");
+    save();
   };
-  return div;
+  return d;
 }
 
 /* Drag */
 document.addEventListener("dragover", e => e.preventDefault());
 document.addEventListener("drop", e => {
-  if (!dragged) return;
   if (e.target.classList.contains("dropzone") || e.target.id === "pool") {
     e.target.appendChild(dragged);
-    saveState();
+    save();
   }
 });
 
-/* 🔥 Firestore */
-function saveState() {
+/* Firestore */
+function save() {
   const state = {
-    pool: [...pool.children].map(p => ({
-      name: p.textContent,
-      fixed: p.classList.contains("fixed")
-    })),
+    pool: [...pool.children].map(p => ({ name: p.textContent, fixed: p.classList.contains("fixed") })),
     scopes: [...document.querySelectorAll(".scope")].map(scope => ({
       name: scope.querySelector("h3").textContent,
       people: [...scope.querySelectorAll(".person")].map(p => ({
@@ -244,38 +235,37 @@ function saveState() {
       }))
     }))
   };
-  setDoc(docRef, state);
+  setDoc(ref, state);
 }
 
-onSnapshot(docRef, snap => {
+onSnapshot(ref, snap => {
   pool.innerHTML = "";
   document.querySelectorAll(".dropzone").forEach(z => z.innerHTML = "");
 
   if (!snap.exists()) {
     PEOPLE.forEach(p => pool.appendChild(createPerson(p)));
-    saveState();
+    save();
     return;
   }
 
   const state = snap.data();
   state.pool.forEach(p => pool.appendChild(createPerson(p.name, p.fixed)));
-
-  state.scopes.forEach((s, i) => {
+  state.scopes.forEach((s,i) => {
     const zone = document.querySelectorAll(".dropzone")[i];
     s.people.forEach(p => zone.appendChild(createPerson(p.name, p.fixed)));
   });
 });
 
 /* Reset */
-window.resetAll = function () {
+function resetAll() {
   document.querySelectorAll(".person").forEach(p => {
     if (!p.classList.contains("fixed")) pool.appendChild(p);
   });
-  saveState();
-};
+  save();
+}
 
 /* Lista */
-window.generate = function () {
+window.generate = () => {
   let out = "";
   document.querySelectorAll(".scope").forEach(scope => {
     const names = [...scope.querySelectorAll(".person")].map(p => p.textContent);
@@ -284,37 +274,14 @@ window.generate = function () {
     names.forEach(n => out += n + "\n");
     out += "\n";
   });
-  document.getElementById("result").innerHTML =
-    out.replace(/- (.*)/g, "<strong>- $1</strong>");
+  document.getElementById("result").innerHTML = out.replace(/- (.*)/g, "<strong>- $1</strong>");
 };
 
-/* Copiar */
-window.copyAll = function () {
-  const txt = document.getElementById("result").textContent;
-  if (!txt.trim()) return alert("Gere a lista antes 🙂");
-  navigator.clipboard.writeText(txt);
+window.copyAll = () => {
+  navigator.clipboard.writeText(document.getElementById("result").textContent);
   alert("Lista copiada!");
 };
-
-/* 🔒 ADMIN – 5 cliques */
-let clicks = 0;
-let timer = null;
-document.getElementById("adminTitle").addEventListener("click", () => {
-  clicks++;
-  clearTimeout(timer);
-  timer = setTimeout(() => clicks = 0, 1200);
-
-  if (clicks === 5) {
-    clicks = 0;
-    if (confirm("Reinicializar base a partir do HTML?")) {
-      setDoc(docRef, {});
-    }
-  }
-});
 </script>
 
 </body>
 </html>
-
-
-
